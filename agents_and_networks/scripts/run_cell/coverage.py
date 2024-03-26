@@ -6,9 +6,11 @@ import re
 import csv
 from pyproj import Transformer
 from datetime import datetime, timedelta
-from telcell.data.models import Measurement, Point
-from telcell.data.models import RDPoint
+
 from random import choices
+
+from telcell.data.models import Measurement, Point, RDPoint
+
 
 
 """
@@ -159,9 +161,9 @@ def main(model_params):
 if __name__ == '__main__':
     model_params = {
         "start_date": '2023-05-01',
-        "end_date": '2023-05-31',
+        "end_date": '2023-05-02',
         # "bounding_box":(4.2009,51.8561,4.9423,52.3926),
-        "bounding_box":(4.2009,51.8561,4.5978,52.1149),
+        "bounding_box":(4.3338,51.9853,4.3658,52.0204),
         "cell_file": './data/20191202131001.csv',
         "trajectory_file": '././outputs/trajectories/output_trajectory.csv',
         "output_file": '././outputs/trajectories/output_cell.csv',

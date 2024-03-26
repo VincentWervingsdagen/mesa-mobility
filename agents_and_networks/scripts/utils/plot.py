@@ -2,23 +2,23 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import geopandas as gpd
 import re
+import os
 
 # Start and End date for trajectory analysis
-start_date = '2023-05-10'
-end_date = '2023-06-20'
+start_date = '2023-05-01'
+end_date = '2023-05-02'
 
-df_cell = pd.read_csv('././outputs/trajectories2.0/Returners/Eval/sampling1/output_cell.csv')
-df_trajectory = pd.read_csv('././outputs/trajectories2.0/Returners/Eval/output_trajectory.csv')
+script_dir = os.path.dirname(os.path.abspath(__file__))
+df_cell = pd.read_csv(os.path.join(script_dir,'..','..', 'outputs', 'trajectories', 'output_cell.csv'))
+df_trajectory = pd.read_csv(os.path.join(script_dir,'..','..', 'outputs', 'trajectories', 'output_trajectory.csv'))
+df_trajectory.columns = ['id', 'owner', 'timestamp', 'cellinfo.wgs84.lon', 'cellinfo.wgs84.lat', 'status']
 mask = (df_trajectory['timestamp'] >= start_date) & (df_trajectory['timestamp'] <= end_date)
 df_trajectory = df_trajectory.loc[mask]
 
 mask = (df_cell['timestamp'] >= start_date) & (df_cell['timestamp'] <= end_date)
 df_cell = df_cell.loc[mask]
 
-
-
-
-bounding_box1 = (4.2009,51.8561,4.5978,52.1149)
+bounding_box1 = (4.3338,51.9853,4.3658,52.0204)
 # bounding_box1 = (4.2490,52.0035,4.4138,52.0934)
 # bounding_box2 = (4.8582,52.3478,4.9423,52.3926)
 
@@ -26,12 +26,8 @@ bounding_box1 = (4.2009,51.8561,4.5978,52.1149)
 # bounding_box = (min(bounding_box1[0],bounding_box2[0]),min(bounding_box1[1],bounding_box2[1]),
 #                              max(bounding_box1[2],bounding_box2[2]),max(bounding_box1[3],bounding_box2[3]))    
 
-walkway_file = f"data/zuid-holland/gis_osm_roads_free_1"
-walkway_file_trip = f"data/noord-holland/gis_osm_roads_free_1"
-
-
-
-                                                  
+walkway_file = os.path.join(script_dir,'..','..', 'data', 'zuid-holland', 'gis_osm_roads_free_1.zip')
+walkway_file_trip = os.path.join(script_dir,'..','..', 'data', 'zuid-holland', 'gis_osm_roads_free_1.zip')
 
 # files = [walkway_file,walkway_file_trip]
 # boxes = [bounding_box1,bounding_box2]
@@ -63,7 +59,7 @@ walkway_df.plot(ax=ax3,color='black',linewidth=0.5)
 agents = sorted(pd.unique(df_cell['owner']))
 print(agents)
 
-for i in range(11,21):
+for i in range(0,3):
     agents_cell = df_cell[df_cell['owner'].isin([agents[i]])] 
     agents_trajectory = df_trajectory[df_trajectory['owner'].isin([agents[i]])] 
 
@@ -71,7 +67,7 @@ for i in range(11,21):
     lat = agents_trajectory['cellinfo.wgs84.lat']
     ax1.plot(lon, lat, zorder=5,linewidth=1.5)
     ax1.scatter(lon, lat, zorder=10, s=10)
-    ax1.set_title('Trajectory')
+    ax1.set_title('trajectories')
 
     phone1_df = agents_cell[agents_cell['device'].isin([re.sub("[^0-9]", "", agents[i])+"_1"])] 
     phone2_df = agents_cell[agents_cell['device'].isin([re.sub("[^0-9]", "", agents[i])+"_2"])] 
@@ -88,9 +84,5 @@ for i in range(11,21):
     ax3.plot(lon2, lat2, zorder=5,linewidth=1.2)
     ax3.scatter(lon2, lat2, zorder=10, s=10)
     ax3.set_title('Cell Towers: Phone 2')
-
-
-
-    
 
 plt.show()

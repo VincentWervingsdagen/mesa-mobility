@@ -4,9 +4,9 @@ import pandas as pd
 import folium
 import branca
 
-data_path = Path('././outputs/trajectories2.0/ReturnersSlow/Eval/output_trajectory.csv')
-start_date = '2023-06-01'
-end_date = '2023-06-02'
+data_path = Path(r'C:\Users\Vincent Engbers\PycharmProjects\mesa-mobility\agents_and_networks\outputs\Trajectory\output_trajectory.csv')
+start_date = '2023-05-01'
+end_date = '2023-05-02'
 
 
 df = pd.read_csv(data_path)

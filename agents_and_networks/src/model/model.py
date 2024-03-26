@@ -10,6 +10,7 @@ import csv
 
 from datetime import datetime, timedelta
 
+import os
 
 from src.agent.building import Building
 from src.agent.commuter import Commuter
@@ -138,9 +139,12 @@ class AgentsAndNetworks(mesa.Model):
         self.second = 0
         
         self.writing_id_trajectory = 0
-        self._create_commuters() 
-        output_file_trajectory = open(f'././outputs/trajectories/output_trajectory.csv', 'w')
-        csv.writer(output_file_trajectory).writerow(['id','owner','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','status'])    
+        self._create_commuters()
+
+        print("Opening file?")
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_file_trajectory = open(os.path.join(script_dir, '..','..', 'outputs', 'trajectories', 'output_trajectory.csv'), 'w')
+        csv.writer(output_file_trajectory).writerow(['id','owner','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','status'])
 
         self.datacollector = mesa.DataCollector(
             model_reporters={
@@ -272,7 +276,8 @@ class AgentsAndNetworks(mesa.Model):
                 
     
     def __write_to_file(self) -> None:
-        output_file = open('././outputs/trajectories/output_trajectory.csv', 'a')
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_file = open(os.path.join(script_dir, '..','..', 'outputs', 'trajectories', 'output_trajectory.csv'), 'a')
         output_writer = csv.writer(output_file)
         for pos in self.positions_to_write:
             lon,lat = Transformer.from_crs("EPSG:3857","EPSG:4326").transform(pos[1],pos[2])

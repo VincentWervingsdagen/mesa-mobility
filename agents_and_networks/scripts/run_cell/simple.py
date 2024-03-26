@@ -9,6 +9,9 @@ from datetime import datetime, timedelta
 
 from math import atan2,degrees
 
+import os
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 def main(model_params):
@@ -30,6 +33,7 @@ def main(model_params):
     
     # Read in trajectories, limit and add seconds passed column
     df_trajectory = pd.read_csv(model_params["trajectory_file"])
+    df_trajectory.columns = ['id','owner','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','status']
     df_trajectory = df_trajectory.loc[(df_trajectory['timestamp'] >= model_params["start_date"]) & (df_trajectory['timestamp'] <= model_params["end_date"])]
     df_trajectory['seconds'] = [(datetime.strptime(x,"%Y-%m-%d %H:%M:%S") - start).total_seconds() for x in df_trajectory['timestamp']]
     all_cells = np.array(list(zip(df_cell['lat'],df_cell['lon'])))
@@ -89,10 +93,10 @@ def main(model_params):
 if __name__ == '__main__':
     model_params = {
         "start_date": '2023-05-01',
-        "end_date": '2023-06-31',
-        "bounding_box":(4.2009,51.8561,4.5978,52.1149),
-        "cell_file": './data/20191202131001.csv',
-        "trajectory_file": '././outputs/trajectories/output_trajectory.csv',
-        "output_file": '././outputs/trajectories/output_cell.csv',
+        "end_date": '2023-05-02',
+        "bounding_box":(4.3338,51.9853,4.3658,52.0204),
+        "cell_file": os.path.join(script_dir,'..', '..', 'data', '20191202131001.csv'),
+        "trajectory_file": os.path.join(script_dir,'..', '..', 'outputs', 'trajectories','output_trajectory.csv'),
+        "output_file": os.path.join(script_dir,'..', '..', 'outputs', 'trajectories','output_cell.csv'),
     }
     main(model_params)

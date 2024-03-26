@@ -8,15 +8,15 @@ from src.space.utils import power_law_exponential_cutoff
 import scipy.stats as stats
 
 
-start_date = '2023-06-01'
-end_date = '2023-06-31'
+start_date = '2023-05-01'
+end_date = '2023-05-02'
 
-df_cell = pd.read_csv('././outputs/trajectories/Explorers/Eval/output_trajectory.csv')
+df_cell = pd.read_csv('././outputs/trajectory/output_trajectory.csv')
 
 mask = (df_cell['timestamp'] >= start_date) & (df_cell['timestamp'] <= end_date)
 df_cell = df_cell.loc[mask]
 
-df_cell.to_csv('././outputs/trajectories/Explorers/Eval/output_trajectory_small.csv')
+df_cell.to_csv('././outputs/trajectory/output_trajectory_small.csv')
 # y_time1 = 0
 # y1 = []
 
