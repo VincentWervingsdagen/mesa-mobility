@@ -95,7 +95,7 @@ class AgentsAndNetworks(mesa.Model):
         bounding_box_trip,
         commuter_speed_walk,
         commuter_speed_drive,
-        model_crs="epsg:3857",
+        model_crs="epsg:4289",
         start_date="2023-05-01",
     ) -> None:
         super().__init__()
@@ -132,19 +132,20 @@ class AgentsAndNetworks(mesa.Model):
         self._load_road_vertices_from_file(walkway_file, walkway_file_trip, crs=model_crs)
         print("read in road file")
         self._set_building_entrance()
-
+        print("set building entrance")
         self.day = 0
         self.hour = 0
         self.minute = 0
         self.second = 0
-        
+        print("set days")
         self.writing_id_trajectory = 0
         self._create_commuters()
+        print("create commuters")
 
-        print("Opening file?")
         script_dir = os.path.dirname(os.path.abspath(__file__))
         output_file_trajectory = open(os.path.join(script_dir, '..','..', 'outputs', 'trajectories', 'output_trajectory.csv'), 'w')
         csv.writer(output_file_trajectory).writerow(['id','owner','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','status'])
+        print("create output files")
 
         self.datacollector = mesa.DataCollector(
             model_reporters={

@@ -87,8 +87,9 @@ if __name__ == "__main__":
         AgentsAndNetworks,
         # use following if you want map functionality
         [map_element, clock_element],
-        # [clock_element],
+        #[clock_element],
         "Agents and Networks",
         model_params,
     )
     server.launch()
+
