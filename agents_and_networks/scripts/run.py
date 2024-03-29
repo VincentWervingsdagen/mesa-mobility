@@ -12,24 +12,21 @@ import os
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 if __name__ == "__main__":
-    region_params = {
-        "data_crs": "epsg:4326", "commuter_speed": 5.0
-    }
-
     model_params = {
-        "data_crs": region_params["data_crs"],
+        "data_crs": "epsg:4326",
         "start_date": '2023-05-01',
-        "bounding_box":(4.3338,51.9853,4.3658,52.0204),
+        #"bounding_box":(4.3338,51.9853,4.3658,52.0204), #Delft
+        "bounding_box": (4.1874, 51.8280, 4.593, 52.0890), #Zuid holland
         "bounding_box_trip":(4.2929,52.0597,4.3157,52.0871),
-        "commuter_speed_drive": 5.0,
+        "commuter_speed_drive": 10.0,
         "num_commuters": mesa.visualization.Slider(
-            "Number of Commuters", value=2, min_value=1, max_value=30, step=1
+            "Number of Commuters", value=1, min_value=1, max_value=10, step=1
         ),
         "commuter_speed_walk": mesa.visualization.Slider(
             "Commuter Walking Speed (m/s)",
-            value=region_params["commuter_speed"],
+            value=14.0,
             min_value=0.1,
-            max_value=30,
+            max_value=50,
             step=0.1,
         ),
         "step_duration": mesa.visualization.NumberInput(
@@ -50,7 +47,7 @@ if __name__ == "__main__":
         ),
         "tau_jump_min": mesa.visualization.NumberInput(
             "Min jump (km) jump size distribution (truncated power law)",
-            value=1.0,
+            value=25.0,
         ),
         "tau_jump": mesa.visualization.NumberInput(
             "Max jump (km) jump size distribution (truncated power law)",
@@ -66,15 +63,15 @@ if __name__ == "__main__":
         ),
         "tau_time": mesa.visualization.NumberInput(
             "Max time (hour) waiting time distribution (truncated power law)",
-            value=17,
+            value=10,
         ),
         "rho": mesa.visualization.NumberInput(
             "Constant in probability of exploration",
-            value=1,
+            value=2,
         ),
         "gamma": mesa.visualization.NumberInput(
             "Exponent in probability of exploration",
-            value=2,
+            value=1,
         ),
         "buildings_file": os.path.join(script_dir, '..', 'data', 'zuid-holland', 'gis_osm_buildings_a_free_1.zip'),
         "buildings_file_trip": os.path.join(script_dir, '..', 'data', 'noord-holland', 'gis_osm_buildings_a_free_1.zip'),

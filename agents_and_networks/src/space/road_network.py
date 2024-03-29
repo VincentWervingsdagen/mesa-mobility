@@ -11,6 +11,9 @@ from sklearn.neighbors import KDTree
 
 from src.space.utils import segmented
 
+import os
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
 
 class RoadNetwork:
     _nx_graph: nx.Graph
@@ -76,7 +79,7 @@ class NetherlandsWalkway(RoadNetwork):
 
     def __init__(self, lines) -> None:
         super().__init__(lines)
-        self._path_cache_result = f"outputs/path_cache_result.pkl"
+        self._path_cache_result = os.path.join(script_dir, '..','..', 'outputs', 'path_cache_result.pkl')
         try:
             with open(self._path_cache_result, "rb") as cached_result:
                 self._path_select_cache = pickle.load(cached_result)

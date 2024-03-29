@@ -50,7 +50,7 @@ class Commuter(mg.GeoAgent):
     TAU_time_min: float
     RHO: float # constant in exploration probability
     GAMMA: float # exponent in exploration probability
-    timer: Timer
+    #timer: Timer
 
 
 
@@ -65,7 +65,7 @@ class Commuter(mg.GeoAgent):
         self.on_trip = False
         self.between = False
         self._set_wait_time()
-        self.timer = Timer()
+        #self.timer = Timer()
         
 
     def __repr__(self) -> str:

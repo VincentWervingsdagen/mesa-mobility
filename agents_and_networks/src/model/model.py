@@ -95,7 +95,7 @@ class AgentsAndNetworks(mesa.Model):
         bounding_box_trip,
         commuter_speed_walk,
         commuter_speed_drive,
-        model_crs="epsg:4289",
+        model_crs="epsg:3857",
         start_date="2023-05-01",
     ) -> None:
         super().__init__()
@@ -132,20 +132,16 @@ class AgentsAndNetworks(mesa.Model):
         self._load_road_vertices_from_file(walkway_file, walkway_file_trip, crs=model_crs)
         print("read in road file")
         self._set_building_entrance()
-        print("set building entrance")
         self.day = 0
         self.hour = 0
         self.minute = 0
         self.second = 0
-        print("set days")
         self.writing_id_trajectory = 0
         self._create_commuters()
-        print("create commuters")
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
         output_file_trajectory = open(os.path.join(script_dir, '..','..', 'outputs', 'trajectories', 'output_trajectory.csv'), 'w')
         csv.writer(output_file_trajectory).writerow(['id','owner','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','status'])
-        print("create output files")
 
         self.datacollector = mesa.DataCollector(
             model_reporters={
@@ -187,9 +183,7 @@ class AgentsAndNetworks(mesa.Model):
         self, buildings_file: str, buildings_file_trip: str, crs: str
     ) -> None:
         # read in buildings from normal bounding box
-        buildings_df = gpd.read_file(buildings_file, bbox=(self.bounding_box))
-        # sample buildings for speedup
-        buildings_df = buildings_df.sample(frac =  0.01)
+        buildings_df = gpd.read_file(buildings_file, bbox=(self.bounding_box)).sample(frac = 0.001)
         print("number buildings: ",len(buildings_df))
         # if allow trips, read in buildings from bounding box corresponding to trip
         if (self.allow_trips == True):
@@ -201,7 +195,6 @@ class AgentsAndNetworks(mesa.Model):
         else:
             buildings_type = [0]*len(buildings_df)
 
-
         buildings_df.index.name = "unique_id"
         buildings_df = buildings_df.set_crs(self.data_crs, allow_override=True).to_crs(
             crs
@@ -212,7 +205,6 @@ class AgentsAndNetworks(mesa.Model):
         
         building_creator = mg.AgentCreator(Building, model=self)
         buildings = building_creator.from_GeoDataFrame(buildings_df)
-        print(len(buildings))
 
         self.space.add_buildings(buildings,buildings_type)
 
