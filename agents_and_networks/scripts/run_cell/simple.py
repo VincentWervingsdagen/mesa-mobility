@@ -28,7 +28,7 @@ def main(model_params):
     df_cell['lon'],df_cell['lat'] =  Transformer.from_crs("EPSG:28992","EPSG:4979").transform(df_cell['X'],df_cell['Y'])
     df_cell = df_cell.loc[(df_cell['lat'] >= model_params["bounding_box"][0]) & (df_cell['lat'] <= model_params["bounding_box"][2]) 
                           & (df_cell['lon'] >= model_params["bounding_box"][1]) & (df_cell['lon'] <= model_params["bounding_box"][3])]
-    df_cell['Hoofdstraalrichting'] = df_cell['Hoofdstraalrichting'].str.replace('\D', '')
+    df_cell['Hoofdstraalrichting'] = df_cell['Hoofdstraalrichting'].str.replace('\D', '',regex=True)
     df_cell['Hoofdstraalrichting'] = df_cell['Hoofdstraalrichting'].str.replace(' ', '')
     
     # Read in trajectories, limit and add seconds passed column
@@ -46,10 +46,14 @@ def main(model_params):
         agents_df = df_trajectory[df_trajectory['owner'].isin([agents[i]])] 
         max = agents_df['seconds'].iloc[-1]
 
+        print(agents_df.head())
+        print(max)
+
         # for each phone we sample from a poisson distribution with rate of one per hour
-        for phone in range(2):
+        for phone in range(1):
             index = 0
-            p_time = np.random.default_rng().exponential(scale=3600)
+            p_time = 1
+            print(p_time)
             x_old, y_old = 0,0
             cellx, celly, degree = 0,0,0
 
@@ -78,12 +82,13 @@ def main(model_params):
                     degree = degree_cell
                     x_old = x
                     y_old = y
+
                 agent = re.sub("[^0-9]", "", agents[i])
-                if (agents_df['status'].iloc[index-1] == "transport"):
-                    output_writer.writerow([writing_id, f"Agent{agent}", f"{agent}_{phone+1}", 
-                                start + timedelta(seconds = p_time), cellx, celly, degree,"0-0-0"])
+
+                output_writer.writerow([writing_id, f"Agent{agent}", f"{agent}_{phone+1}",
+                    start + timedelta(seconds = p_time), cellx, celly, degree,"0-0-0"])
                 
-                p_time += np.random.default_rng().exponential(scale=3600)
+                p_time += np.random.default_rng().exponential(scale=360)
                 writing_id += 1
     output_file.close()
 
@@ -96,7 +101,7 @@ if __name__ == '__main__':
         #"bounding_box":(4.3338,51.9853,4.3658,52.0204), #Delft
         "bounding_box": (4.1874, 51.8280, 4.593, 52.0890), #Noord en zuid holland
         "cell_file": os.path.join(script_dir,'..', '..', 'data', '20191202131001.csv'),
-        "trajectory_file": os.path.join(script_dir,'..', '..', 'outputs', 'trajectories','output_trajectory_100days.csv'),
+        "trajectory_file": os.path.join(script_dir,'..', '..', 'outputs', 'trajectories','output_trajectory_3days.csv'),
         "output_file": os.path.join(script_dir,'..', '..', 'outputs', 'trajectories','output_cell.csv'),
     }
     main(model_params)

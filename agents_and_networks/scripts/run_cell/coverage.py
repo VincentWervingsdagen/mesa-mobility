@@ -11,7 +11,9 @@ from random import choices
 
 from telcell.data.models import Measurement, Point, RDPoint
 
+import os
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
 
 """
 Script to obtain the cell tower samplings from a pre-existing coverage model
@@ -45,12 +47,10 @@ def main(model_params):
                           & (df_cell['lat'] >= model_params["bounding_box"][1]) & (df_cell['lat'] <= model_params["bounding_box"][3])]
 
     # drop rows that contain the partial string "Sci"
-    print(len(df_cell))
     
     df_cell = df_cell[~df_cell['Hoofdstraalrichting'].str.contains('|'.join(["-"]))]
     df_cell['Hoofdstraalrichting'] = df_cell['Hoofdstraalrichting'].str.replace('\D', '')
     df_cell['Hoofdstraalrichting'] = df_cell['Hoofdstraalrichting'].str.replace(' ', '')
-    print(len(df_cell))
     
     # Read in trajectories
     df_trajectory = pd.read_csv(model_params["trajectory_file"])
@@ -68,7 +68,7 @@ def main(model_params):
     agents = sorted(pd.unique(df_trajectory['owner']))  
     
     # Load in coverage model, we utilize the model with mnc 8 and 0 time difference
-    coverage_models = pickle.load(open('././data/coverage_model', 'rb'))
+    coverage_models = pickle.load(open(os.path.join(script_dir, '..','..', 'data', 'coverage_model')))
     print(coverage_models)
     model = coverage_models[('16',(0, 0))]
 
@@ -161,13 +161,13 @@ def main(model_params):
 if __name__ == '__main__':
     model_params = {
         "start_date": '2023-05-01',
-        "end_date": '2023-05-02',
+        "end_date": '2023-05-04',
         # "bounding_box":(4.2009,51.8561,4.9423,52.3926),
         #"bounding_box":(4.3338,51.9853,4.3658,52.0204), #Delft
         "bounding_box": (4.1874, 51.8280, 4.593, 52.0890), #Noord en zuid holland
-        "cell_file": './data/20191202131001.csv',
-        "trajectory_file": '././outputs/trajectories/output_trajectory.csv',
-        "output_file": '././outputs/trajectories/output_cell.csv',
+        "cell_file": os.path.join(script_dir, '..','..', 'data', '20191202131001.csv'),
+        "trajectory_file": os.path.join(script_dir, '..','..', 'outputs', 'trajectories','output_trajectory_3days.csv'),
+        "output_file": os.path.join(script_dir, '..','..', 'outputs', 'trajectories','output_cell.csv'),
         "sampling_method": 1
     }
     main(model_params)
