@@ -177,7 +177,7 @@ class Commuter(mg.GeoAgent):
         visited_locations = self.visited_locations_trip if trip else self.visited_locations 
         frequencies = self.frequencies_trip if trip else self.frequencies
 
-        jump_length = (power_law_exponential_cutoff(self.TAU_jump_min, self.TAU_jump, self.ALPHA, self.TAU_jump)*100)
+        jump_length = (power_law_exponential_cutoff(self.TAU_jump_min, self.TAU_jump, self.ALPHA, self.TAU_jump)*1000)
         theta = random.uniform(0, 2*math.pi)
         new_point = Point(self.geometry.x + jump_length * math.cos(theta),
         self.geometry.y + jump_length * math.sin(theta))      
