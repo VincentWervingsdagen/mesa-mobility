@@ -65,7 +65,7 @@ class AgentsAndNetworks(mesa.Model):
     hour: int
     minute: int
     second: int
-    positions_to_write: list[int,float,float,datetime]
+    positions_to_write: list[int,datetime.timestamp,float,float,str,float]
     positions: list[float,float]
     writing_id_trajectory:int
     common_work: Building
@@ -114,7 +114,8 @@ class AgentsAndNetworks(mesa.Model):
         self.positions = []
 
         Commuter.SPEED_WALK = commuter_speed_walk * step_duration  # meters per tick 
-        Commuter.SPEED_DRIVE = commuter_speed_drive * step_duration  # meters per tick 
+        Commuter.SPEED_DRIVE = commuter_speed_drive * step_duration  # meters per tick
+        Commuter.speed = 0.
         Commuter.ALPHA = alpha
         Commuter.TAU_jump = tau_jump
         Commuter.TAU_jump_min = tau_jump_min
@@ -141,7 +142,7 @@ class AgentsAndNetworks(mesa.Model):
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
         output_file_trajectory = open(os.path.join(script_dir, '..','..', 'outputs', 'trajectories', 'output_trajectory.csv'), 'w')
-        csv.writer(output_file_trajectory).writerow(['id','owner','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','status'])
+        csv.writer(output_file_trajectory).writerow(['id','owner','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','status','speed'])
 
         self.datacollector = mesa.DataCollector(
             model_reporters={
@@ -174,10 +175,11 @@ class AgentsAndNetworks(mesa.Model):
             random_home.visited = True
             commuter.set_visited_location(random_home,25)
             commuter.status = "home"
+            commuter.speed = 0.
             self.space.add_commuter(commuter, True)
             self.schedule.add(commuter)
             self.positions.append([commuter.geometry.x,commuter.geometry.y])
-            self.positions_to_write.append([i,commuter.geometry.x,commuter.geometry.y,date,commuter.status])
+            self.positions_to_write.append([i,date,commuter.geometry.x,commuter.geometry.y,commuter.status,commuter.speed])
 
     def _load_buildings_from_file(
         self, buildings_file: str, buildings_file_trip: str, crs: str
@@ -258,7 +260,7 @@ class AgentsAndNetworks(mesa.Model):
             x = commuter.geometry.x
             y = commuter.geometry.y
             if (self.positions[i][0] != x or self.positions[i][1] != y):
-                self.positions_to_write.append([i,x,y,time,commuter.status])
+                self.positions_to_write.append([i,time,x,y,commuter.status,commuter.speed])
                 self.positions[i][0] = x
                 self.positions[i][1] = y
 
@@ -273,10 +275,10 @@ class AgentsAndNetworks(mesa.Model):
         output_file = open(os.path.join(script_dir, '..','..', 'outputs', 'trajectories', 'output_trajectory.csv'), 'a')
         output_writer = csv.writer(output_file)
         for pos in self.positions_to_write:
-            lon,lat = Transformer.from_crs("EPSG:3857","EPSG:4326").transform(pos[1],pos[2])
+            lon,lat = Transformer.from_crs("EPSG:3857","EPSG:4326").transform(pos[2],pos[3])
             output_writer.writerow([self.writing_id_trajectory, f"Agent{pos[0]}", 
-                                   pos[3],
-                                   lat,lon,pos[4]])
+                                   pos[1],
+                                   lat,lon,pos[4],pos[5]])
             self.writing_id_trajectory += 1
         output_file.close()
         total_seconds = self.day*24*60*60 + self.hour*60*60 + self.minute*60 + self.second

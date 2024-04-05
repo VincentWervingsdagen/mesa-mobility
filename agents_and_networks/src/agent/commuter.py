@@ -40,6 +40,7 @@ class Commuter(mg.GeoAgent):
     only_same_day_trips: bool
     on_trip: bool 
     between: bool # moving between with increased speed
+    speed: float
     SPEED_WALK: float
     SPEED_DRIVE: float
     ALPHA: float # jump
@@ -155,6 +156,7 @@ class Commuter(mg.GeoAgent):
 
             self._path_select()
             self.status = "transport"
+            self.speed = self.SPEED_WALK/60
                      
 
     def _move(self) -> None:
@@ -166,6 +168,7 @@ class Commuter(mg.GeoAgent):
             else:
                 self.model.space.move_commuter(self, self.destination.centroid,True)
                 self._set_wait_time()
+                self.speed = 0.
                 if self.destination == self.my_home:
                     self.status = "home"
                 else:
