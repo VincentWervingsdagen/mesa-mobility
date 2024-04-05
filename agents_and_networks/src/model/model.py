@@ -48,11 +48,8 @@ class AgentsAndNetworks(mesa.Model):
     space: Netherlands
     walkway: NetherlandsWalkway
     bounding_box:list
-    bounding_box_trip:list
     num_commuters: int
     step_duration: int
-    allow_trips: bool
-    only_same_day_trips: bool
     alpha: float
     tau_jump: float    # in meters
     tau_jump_min: float
@@ -71,18 +68,13 @@ class AgentsAndNetworks(mesa.Model):
     common_work: Building
     datacollector: mesa.DataCollector
 
-
     def __init__(
         self,
         data_crs: str,
         buildings_file: str,
-        buildings_file_trip: str,
         walkway_file: str,
-        walkway_file_trip: str,
         num_commuters,
         step_duration,
-        allow_trips,
-        only_same_day_trips,
         alpha,
         tau_jump,   # in meters
         tau_jump_min,
@@ -92,9 +84,7 @@ class AgentsAndNetworks(mesa.Model):
         rho,
         gamma,
         bounding_box,
-        bounding_box_trip,
         commuter_speed_walk,
-        commuter_speed_drive,
         model_crs="epsg:3857",
         start_date="2023-05-01",
     ) -> None:
@@ -106,16 +96,12 @@ class AgentsAndNetworks(mesa.Model):
         self.num_commuters = num_commuters
         self.space.number_commuters = num_commuters
         self.bounding_box = bounding_box
-        self.bounding_box_trip = bounding_box_trip
         self.step_duration = step_duration
-        self.allow_trips = allow_trips
-        self.only_same_day_trips = only_same_day_trips
         self.positions_to_write = []
         self.positions = []
 
-        Commuter.SPEED_WALK = commuter_speed_walk * step_duration  # meters per tick 
-        Commuter.SPEED_DRIVE = commuter_speed_drive * step_duration  # meters per tick
-        Commuter.speed = 0.
+        Commuter.SPEED_WALK = commuter_speed_walk * step_duration  # meters per tick.
+        Commuter.speed = 0. #Updates the current speed so that it can be saved.
         Commuter.ALPHA = alpha
         Commuter.TAU_jump = tau_jump
         Commuter.TAU_jump_min = tau_jump_min
@@ -125,13 +111,11 @@ class AgentsAndNetworks(mesa.Model):
         Commuter.RHO = rho
         Commuter.GAMMA = gamma
 
-        Commuter.allow_trips = allow_trips
-        Commuter.only_same_day_trips = only_same_day_trips
-
-        self._load_buildings_from_file(buildings_file, buildings_file_trip, crs=model_crs)
         print("read in buildings file")
-        self._load_road_vertices_from_file(walkway_file, walkway_file_trip, crs=model_crs)
+        self._load_buildings_from_file(buildings_file, crs=model_crs)
         print("read in road file")
+        self._load_road_vertices_from_file(walkway_file, crs=model_crs)
+
         self._set_building_entrance()
         self.day = 0
         self.hour = 0
@@ -182,20 +166,12 @@ class AgentsAndNetworks(mesa.Model):
             self.positions_to_write.append([i,date,commuter.geometry.x,commuter.geometry.y,commuter.status,commuter.speed])
 
     def _load_buildings_from_file(
-        self, buildings_file: str, buildings_file_trip: str, crs: str
+        self, buildings_file: str, crs: str
     ) -> None:
         # read in buildings from normal bounding box
         buildings_df = gpd.read_file(buildings_file, bbox=(self.bounding_box)).sample(frac = 0.001)
         print("number buildings: ",len(buildings_df))
         # if allow trips, read in buildings from bounding box corresponding to trip
-        if (self.allow_trips == True):
-            buildings_df_trip = gpd.read_file(buildings_file_trip, bbox=(self.bounding_box_trip))
-            buildings_df_trip = buildings_df_trip.sample(frac =  0.01)
-            print("number buildings trip: ",len(buildings_df_trip))
-            buildings_type = [0]*len(buildings_df) + [1]*len(buildings_df_trip)
-            buildings_df = pd.concat([buildings_df,buildings_df_trip])
-        else:
-            buildings_type = [0]*len(buildings_df)
 
         buildings_df.index.name = "unique_id"
         buildings_df = buildings_df.set_crs(self.data_crs, allow_override=True).to_crs(
@@ -204,45 +180,24 @@ class AgentsAndNetworks(mesa.Model):
         buildings_df["centroid"] = [
             (x, y) for x, y in zip(buildings_df.centroid.x, buildings_df.centroid.y)
         ]
-        
         building_creator = mg.AgentCreator(Building, model=self)
         buildings = building_creator.from_GeoDataFrame(buildings_df)
-
-        self.space.add_buildings(buildings,buildings_type)
+        self.space.add_buildings(buildings)
 
     def _load_road_vertices_from_file(
-        self, walkway_file: str, walkway_file_trip: str, crs: str
+        self, walkway_file: str, crs: str
     ) -> None:
-        if (self.allow_trips == True):
-                                 
-            # read in all roads for two cities
-            files = [walkway_file,walkway_file_trip]
-            boxes = [self.bounding_box,self.bounding_box_trip]
-            walkway_df = gpd.GeoDataFrame(pd.concat([gpd.read_file(i,j) for (i,j) in zip(files,boxes)], 
-                        ignore_index=True)).set_crs(self.data_crs, allow_override=True).to_crs(crs)
-            
-            # only read in motorways between cities
-            bounding_box_full = (min(self.bounding_box[0],self.bounding_box_trip[0]),min(self.bounding_box[1],self.bounding_box_trip[1]),
-                             max(self.bounding_box[2],self.bounding_box_trip[2]),max(self.bounding_box[3],self.bounding_box_trip[3])) 
-            motorway_df = gpd.GeoDataFrame(pd.concat([gpd.read_file(i,bounding_box_full) for i in files], 
-                        ignore_index=True)).set_crs(self.data_crs, allow_override=True).to_crs(crs)
-            motorway_df = motorway_df[motorway_df['fclass'].isin(['motorway','motorway_link','secondary'])]
-
-            # combine
-            walkway_df = gpd.GeoDataFrame(pd.concat([walkway_df,motorway_df]))
-        else:
-            walkway_df = (
+        walkway_df = (
                 gpd.read_file(walkway_file, self.bounding_box)
                 .set_crs(self.data_crs, allow_override=True)
                 .to_crs(crs)
-            )
+        )
         self.walkway = NetherlandsWalkway(lines=walkway_df["geometry"])
 
 
     def _set_building_entrance(self) -> None:
         for building in (
             *self.space.buildings,
-            *self.space.buildings_trip,
         ):
             building.entrance_pos = self.walkway.get_nearest_node(building.centroid)
 

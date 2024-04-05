@@ -17,8 +17,6 @@ if __name__ == "__main__":
         "start_date": '2023-05-01',
         #"bounding_box":(4.3338,51.9853,4.3658,52.0204), #Delft
         "bounding_box": (4.1874, 51.8280, 4.593, 52.0890), #Zuid holland
-        "bounding_box_trip":(4.2929,52.0597,4.3157,52.0871),
-        "commuter_speed_drive": 5.0,
         "num_commuters": mesa.visualization.Slider(
             "Number of Commuters", value=1, min_value=1, max_value=10, step=1
         ),
@@ -32,14 +30,6 @@ if __name__ == "__main__":
         "step_duration": mesa.visualization.NumberInput(
             "Step Duration (seconds)",
             value=60,
-        ),
-        "allow_trips": mesa.visualization.Checkbox(
-            "Allow Trips",
-            value=False,
-        ),
-        "only_same_day_trips": mesa.visualization.Checkbox(
-            "Trips Occur on the Same Day",
-            value=False,
         ),
         "alpha": mesa.visualization.NumberInput(
             "Exponent jump size distribution (truncated power law)",
@@ -74,9 +64,7 @@ if __name__ == "__main__":
             value=1,
         ),
         "buildings_file": os.path.join(script_dir, '..', 'data', 'zuid-holland', 'gis_osm_buildings_a_free_1.zip'),
-        "buildings_file_trip": os.path.join(script_dir, '..', 'data', 'noord-holland', 'gis_osm_buildings_a_free_1.zip'),
         "walkway_file": os.path.join(script_dir, '..', 'data', 'zuid-holland', 'gis_osm_roads_free_1.zip'),
-        "walkway_file_trip": os.path.join(script_dir, '..', 'data', 'noord-holland', 'gis_osm_roads_free_1.zip'),
     }
 
     map_element = mg.visualization.MapModule(agent_draw, map_height=600, map_width=600)

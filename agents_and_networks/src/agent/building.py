@@ -25,7 +25,7 @@ class Building(mg.GeoAgent):
         super().__init__(unique_id=unique_id, model=model, geometry=geometry, crs=crs)
         self.entrance = None
         self.name = str(uuid.uuid4())
-        self.function = 0
+        self.function = 0.
         self.visited = False
 
     def __repr__(self) -> str:
