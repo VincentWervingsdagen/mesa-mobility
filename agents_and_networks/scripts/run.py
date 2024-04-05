@@ -18,13 +18,13 @@ if __name__ == "__main__":
         #"bounding_box":(4.3338,51.9853,4.3658,52.0204), #Delft
         "bounding_box": (4.1874, 51.8280, 4.593, 52.0890), #Zuid holland
         "bounding_box_trip":(4.2929,52.0597,4.3157,52.0871),
-        "commuter_speed_drive": 10.0,
+        "commuter_speed_drive": 5.0,
         "num_commuters": mesa.visualization.Slider(
             "Number of Commuters", value=1, min_value=1, max_value=10, step=1
         ),
         "commuter_speed_walk": mesa.visualization.Slider(
             "Commuter Walking Speed (m/s)",
-            value=14.0,
+            value=5.0,
             min_value=0.1,
             max_value=50,
             step=0.1,
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         ),
         "tau_jump_min": mesa.visualization.NumberInput(
             "Min jump (km) jump size distribution (truncated power law)",
-            value=25.0,
+            value=50.0,
         ),
         "tau_jump": mesa.visualization.NumberInput(
             "Max jump (km) jump size distribution (truncated power law)",
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         ),
         "tau_time_min": mesa.visualization.NumberInput(
             "Min time (hour) waiting time distribution (truncated power law)",
-            value=20/60,
+            value=2,
         ),
         "tau_time": mesa.visualization.NumberInput(
             "Max time (hour) waiting time distribution (truncated power law)",
