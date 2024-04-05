@@ -34,9 +34,10 @@ def main(model_params):
     print(df_cell.columns)
     # Read in trajectories, limit and add seconds passed column
     df_trajectory = pd.read_csv(model_params["trajectory_file"])
-    df_trajectory.columns = ['id','owner','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','status']
+    df_trajectory.columns = ['id','owner','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','status','speed']
     df_trajectory = df_trajectory.loc[(df_trajectory['timestamp'] >= model_params["start_date"]) & (df_trajectory['timestamp'] <= model_params["end_date"])]
     df_trajectory['seconds'] = [(datetime.strptime(x,"%Y-%m-%d %H:%M:%S") - start).total_seconds() for x in df_trajectory['timestamp']]
+    # df_trajectory['seconds_adjusted_speed'] = np.hstack((0,np.cumsum(np.diff(df_trajectory['seconds'])*(df_trajectory['speed'][0:-1]+1))))#Events will happen more often while moving to model base station handover.
 
     all_cells = np.array(list(zip(df_cell['lat'],df_cell['lon'])))
 
@@ -49,7 +50,6 @@ def main(model_params):
         max = agents_df['seconds'].iloc[-1]
 
         time_until_event = np.random.default_rng().geometric(p=1/(60*model_params['event_rate']), size=int(max/10)).tolist()
-        # for each phone we sample from a poisson distribution with rate of one per hour
         for phone in range(1):
             index = 0
             p_time = 1
@@ -62,52 +62,53 @@ def main(model_params):
                 x = agents_df['cellinfo.wgs84.lon'].iloc[index-1]
                 y = agents_df['cellinfo.wgs84.lat'].iloc[index-1]
 
+                if (x_old != x or y_old != y):
+                    position = np.array((x,y))
+                    distances = (np.linalg.norm(all_cells-position, axis=1))
+                    found = False
+
+                    while (not found):
+                        index_dis = np.argmin(distances)
+                        degree_cell = df_cell['Hoofdstraalrichting'].iloc[index_dis]
+                        degree_actual = (degrees(atan2(y-all_cells[index_dis][1], x-all_cells[index_dis][0]))+360)%360
+                        if (degree_actual >= int(degree_cell) - 60 and degree_actual <= int(degree_cell) + 60):
+                            found = True
+                        else:
+                            distances[index_dis] = float('inf')
+
+                    cellx = all_cells[index_dis][0]
+                    celly = all_cells[index_dis][1]
+                    degree = degree_cell
+                    x_old = x
+                    y_old = y
+
+                    frequency = df_cell['Frequentie'].iloc[index_dis]
+                    height = df_cell['Hoogte'].iloc[index_dis]
+                    power = df_cell['Vermogen'].iloc[index_dis]
+
                 # if (x_old != x or y_old != y):
-                #     position = np.array((x,y))
-                #     distances = (np.linalg.norm(all_cells-position, axis=1))
-                #     found = False
-                #
-                #     while (not found):
-                #         index_dis = np.argmin(distances)
-                #         degree_cell = df_cell['Hoofdstraalrichting'].iloc[index_dis]
-                #         degree_actual = (degrees(atan2(y-all_cells[index_dis][1], x-all_cells[index_dis][0]))+360)%360
-                #         if (degree_actual >= int(degree_cell) - 60 and degree_actual <= int(degree_cell) + 60):
-                #             found = True
-                #         else:
-                #             distances[index_dis] = float('inf')
+                #     actual_degree = (np.arctan2(y-all_cells[:,1],x-all_cells[:,0])*180/np.pi + 360) % 360
+                #     connection_possible = ((actual_degree >= df_cell['Hoofdstraalrichting'].astype(int)-60)&(actual_degree <= df_cell['Hoofdstraalrichting'].astype(int)+60))
+                #     position = np.array((x, y))
+                #     distances = (np.linalg.norm(all_cells[connection_possible] - position, axis=1)) / (
+                #                 (df_cell[connection_possible]['Vermogen'].to_numpy() / 10) ** 2)
+                #     index_dis = np.argmin(distances)
                 #
                 #     cellx = all_cells[index_dis][0]
                 #     celly = all_cells[index_dis][1]
-                #     degree = degree_cell
+                #     degree = actual_degree[index_dis]
                 #     x_old = x
                 #     y_old = y
                 #     frequency = df_cell['Frequentie'].iloc[index_dis]
                 #     height = df_cell['Hoogte'].iloc[index_dis]
                 #     power = df_cell['Vermogen'].iloc[index_dis]
 
-                if (x_old != x or y_old != y):
-                    actual_degree = (np.arctan2(y-all_cells[:,1],x-all_cells[:,0])*180/np.pi + 360) % 360
-                    connection_possible = ((actual_degree >= df_cell['Hoofdstraalrichting'].astype(int)-60)&(actual_degree <= df_cell['Hoofdstraalrichting'].astype(int)+60))
-                    position = np.array((x, y))
-                    distances = (np.linalg.norm(all_cells[connection_possible] - position, axis=1)) / (
-                                (df_cell[connection_possible]['Vermogen'].to_numpy() / 10) ** 2)
-                    index_dis = np.argmin(distances)
-
-                    cellx = all_cells[index_dis][0]
-                    celly = all_cells[index_dis][1]
-                    degree = actual_degree[index_dis]
-                    x_old = x
-                    y_old = y
-                    frequency = df_cell['Frequentie'].iloc[index_dis]
-                    height = df_cell['Hoogte'].iloc[index_dis]
-                    power = df_cell['Vermogen'].iloc[index_dis]
-
                 agent = re.sub("[^0-9]", "", agents[i])
 
                 output_writer.writerow([writing_id, f"Agent{agent}", f"{agent}_{phone+1}",
                     start + timedelta(seconds = p_time), cellx, celly, degree,frequency,height,power])
-                
-                p_time += time_until_event.pop(1)
+
+                p_time += time_until_event.pop(1)//(1+df_trajectory['speed'].iloc[index-1])
                 writing_id += 1
     output_file.close()
 
@@ -120,7 +121,7 @@ if __name__ == '__main__':
         #"bounding_box":(4.3338,51.9853,4.3658,52.0204), #Delft
         "bounding_box": (4.1874, 51.8280, 4.593, 52.0890), #Noord en zuid holland
         "cell_file": os.path.join(script_dir,'..', '..', 'data', '20191202131001.csv'),
-        "trajectory_file": os.path.join(script_dir,'..', '..', 'outputs', 'trajectories','output_trajectory_12hours.csv'),
+        "trajectory_file": os.path.join(script_dir,'..', '..', 'outputs', 'trajectories','output_trajectory_7hours.csv'),
         "output_file": os.path.join(script_dir,'..', '..', 'outputs', 'trajectories','output_cell.csv'),
         "event_rate": 10 #number of events per hour
     }
