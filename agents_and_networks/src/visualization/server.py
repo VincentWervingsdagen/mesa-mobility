@@ -24,15 +24,9 @@ def agent_draw(agent):
     elif isinstance(agent, Walkway):
         portrayal["color"] = "#04D0CD"
     elif isinstance(agent, Building):
-        # if agent.visited:
-        #     if agent.function == 1:
-        #         portrayal["color"] = "Blue"
-        #     elif agent.function == 2:
-        #         portrayal["color"] = "Green"
-        #     else:
-        #         portrayal["color"] = "Red"
-        # else:
-        portrayal["opacity"] = 0
+        portrayal["color"]= 'Purple'
+        portrayal["radius"] = "2"
+        portrayal["fillOpacity"] = 1
     elif isinstance(agent, Commuter):
         if agent.status == "home":
             portrayal["color"] = "Green"
@@ -62,6 +56,5 @@ location_chart = mesa.visualization.ChartModule(
         {"Label": "average_visited_locations", "Color": "Red"},
     ],
     data_collector_name="datacollector",
-
 )
 

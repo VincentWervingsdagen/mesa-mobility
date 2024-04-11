@@ -5,10 +5,12 @@ import random
 
 import mesa
 import mesa_geo as mg
+import numpy as np
 import pyproj
+import shapely
 from shapely.geometry import LineString, Point
 from src.agent.building import Building
-from src.space.utils import UnitTransformer, redistribute_vertices, power_law_exponential_cutoff
+from src.space.utils import redistribute_vertices_new, power_law_exponential_cutoff, segmented
 
 
 class Commuter(mg.GeoAgent):
@@ -173,7 +175,6 @@ class Commuter(mg.GeoAgent):
                 target=self.destination.entrance_pos,
                 path=self.my_path,
             )
-        
         self._redistribute_path_vertices()
 
 
@@ -182,18 +183,12 @@ class Commuter(mg.GeoAgent):
         # will contain only this entrance node,
         # and len(self.path) == 1. There is no need to redistribute path vertices.
         if len(self.my_path) > 1:
-            unit_transformer = UnitTransformer(degree_crs=self.model.walkway.crs)
-            original_path = LineString([Point(p) for p in self.my_path])
-            # from degree unit to meter
-            path_in_meters = unit_transformer.degree2meter(original_path)
-
-            redistributed_path_in_meters = redistribute_vertices(
-                    path_in_meters, self.SPEED_WALK
+            path = [LineString([u,v]) for u,v in zip(self.my_path[:-1],self.my_path[1:])]
+            maxspeed = self.model.walkway.get_maxspeed(path)
+            traversal_times = self.model.walkway.get_traversal_times(path)
+            redistributed_path = redistribute_vertices_new(
+                    path, traversal_times,maxspeed,self.model.step_duration
             )
+            self.my_path = list(redistributed_path.coords)
 
-            # meter back to degree
-            redistributed_path_in_degree = unit_transformer.meter2degree(
-                redistributed_path_in_meters
-            )
-            self.my_path = list(redistributed_path_in_degree.coords)
 

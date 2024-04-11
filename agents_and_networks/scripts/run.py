@@ -29,7 +29,7 @@ if __name__ == "__main__":
         ),
         "step_duration": mesa.visualization.NumberInput(
             "Step Duration (seconds)",
-            value=60,
+            value=10,
         ),
         "alpha": mesa.visualization.NumberInput(
             "Exponent jump size distribution (truncated power law)",
@@ -37,11 +37,11 @@ if __name__ == "__main__":
         ),
         "tau_jump_min": mesa.visualization.NumberInput(
             "Min jump (km) jump size distribution (truncated power law)",
-            value=50.0,
+            value=50,
         ),
         "tau_jump": mesa.visualization.NumberInput(
             "Max jump (km) jump size distribution (truncated power law)",
-            value=100.0,
+            value=100,
         ),
         "beta": mesa.visualization.NumberInput(
             "Exponent waiting time distribution (truncated power law)",
@@ -49,11 +49,11 @@ if __name__ == "__main__":
         ),
         "tau_time_min": mesa.visualization.NumberInput(
             "Min time (hour) waiting time distribution (truncated power law)",
-            value=2,
+            value=0.1,
         ),
         "tau_time": mesa.visualization.NumberInput(
             "Max time (hour) waiting time distribution (truncated power law)",
-            value=10,
+            value=0.11,
         ),
         "rho": mesa.visualization.NumberInput(
             "Constant in probability of exploration",

@@ -5,14 +5,13 @@ import re
 import os
 from matplotlib.widgets import Slider, Button
 
-
 # Start and End date for trajectory analysis
 start_date = '2023-05-01'
 end_date = '2023-05-02'
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 df_cell = pd.read_csv(os.path.join(script_dir,'..','..', 'outputs', 'trajectories', 'output_cell.csv'))
-df_trajectory = pd.read_csv(os.path.join(script_dir,'..','..', 'outputs', 'trajectories', 'output_trajectory.csv'))
+df_trajectory = pd.read_csv(os.path.join(script_dir,'..','..', 'outputs', 'trajectories', 'output_trajectory_7hours.csv'))
 
 df_trajectory.columns = ['id', 'owner', 'timestamp', 'cellinfo.wgs84.lon', 'cellinfo.wgs84.lat', 'status','speed']
 mask = (df_trajectory['timestamp'] >= start_date) & (df_trajectory['timestamp'] <= end_date)

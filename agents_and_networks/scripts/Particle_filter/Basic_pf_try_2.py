@@ -36,9 +36,9 @@ def update(particles,data):
     wgs84 = pyproj.CRS("EPSG:4326")
     utm = pyproj.CRS("EPSG:32631")
     transformer = pyproj.Transformer.from_crs(wgs84, utm, always_xy=True)
-    triangle_point1 = transformer.transform(*distance(2).destination((data[0],data[1]),bearing=data[2]+60)[0:2])
-    triangle_point2 = transformer.transform(*distance(2).destination((data[0], data[1]), bearing=data[2] - 60)[0:2])
-    triangle = shapely.geometry.Polygon([transformer.transform(data[0],data[1]),triangle_point1,triangle_point2])
+    triangle_point1 = transformer.transform(*distance(2).destination((data.iloc[0],data.iloc[1]),bearing=data.iloc[2]+60)[0:2])
+    triangle_point2 = transformer.transform(*distance(2).destination((data.iloc[0], data.iloc[1]), bearing=data.iloc[2] - 60)[0:2])
+    triangle = shapely.geometry.Polygon([transformer.transform(data.iloc[0],data.iloc[1]),triangle_point1,triangle_point2])
     for i in range(0,N):
         weights[i] += min(1,1/(0.01+shapely.geometry.Point(transformer.transform(particles[i,0],particles[i,1])).distance(triangle)/1000))
     weights /= sum(weights)  # normalize
@@ -48,7 +48,7 @@ def update(particles,data):
 def estimate(particles, weights,data):
     pos = particles[:, 0:2]
     mean = np.average(pos, weights=weights, axis=0)
-    print(distance((mean[0],mean[1]),(data[0],data[1])))
+    print(distance((mean[0],mean[1]),(data.iloc[0],data.iloc[1])))
     return mean
 
 
@@ -66,7 +66,7 @@ def simulation(x,y,N,data):
     time_old = datetime.datetime.strptime('2023-05-01 00:00:00','%Y-%m-%d %H:%M:%S')
     estimate_particle = np.empty((len(data),2))
     for i in range(len(data)):
-        time_new = datetime.datetime.strptime(data['timestamp'][i],'%Y-%m-%d %H:%M:%S')
+        time_new = datetime.datetime.strptime(data['timestamp'].iloc[i],'%Y-%m-%d %H:%M:%S')
         time_difference = (time_new-time_old)/datetime.timedelta(hours=1)
         particles = predict(particles,time_difference)
         weights = update(particles, data[['cellinfo.wgs84.lat','cellinfo.wgs84.lon','cellinfo.azimuth_degrees']].iloc[i])

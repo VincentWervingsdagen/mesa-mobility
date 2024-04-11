@@ -49,7 +49,7 @@ def main(model_params):
     # drop rows that contain the partial string "Sci"
     
     df_cell = df_cell[~df_cell['Hoofdstraalrichting'].str.contains('|'.join(["-"]))]
-    df_cell['Hoofdstraalrichting'] = df_cell['Hoofdstraalrichting'].str.replace('\D', '')
+    df_cell['Hoofdstraalrichting'] = df_cell['Hoofdstraalrichting'].str.replace('\D', '',regex=True)
     df_cell['Hoofdstraalrichting'] = df_cell['Hoofdstraalrichting'].str.replace(' ', '')
     
     # Read in trajectories
@@ -68,7 +68,8 @@ def main(model_params):
     agents = sorted(pd.unique(df_trajectory['owner']))  
     
     # Load in coverage model, we utilize the model with mnc 8 and 0 time difference
-    coverage_models = pickle.load(open(os.path.join(script_dir, '..','..', 'data', 'coverage_model')))
+    coverage_model_path = open(os.path.join(script_dir, '..','..', 'data', 'coverage_model'),'rb')
+    coverage_models = pickle.load(coverage_model_path)
     print(coverage_models)
     model = coverage_models[('16',(0, 0))]
 
@@ -161,12 +162,12 @@ def main(model_params):
 if __name__ == '__main__':
     model_params = {
         "start_date": '2023-05-01',
-        "end_date": '2023-05-04',
+        "end_date": '2023-05-02',
         # "bounding_box":(4.2009,51.8561,4.9423,52.3926),
         #"bounding_box":(4.3338,51.9853,4.3658,52.0204), #Delft
         "bounding_box": (4.1874, 51.8280, 4.593, 52.0890), #Noord en zuid holland
         "cell_file": os.path.join(script_dir, '..','..', 'data', '20191202131001.csv'),
-        "trajectory_file": os.path.join(script_dir, '..','..', 'outputs', 'trajectories','output_trajectory_3days.csv'),
+        "trajectory_file": os.path.join(script_dir, '..','..', 'outputs', 'trajectories','output_trajectory_7hours.csv'),
         "output_file": os.path.join(script_dir, '..','..', 'outputs', 'trajectories','output_cell.csv'),
         "sampling_method": 1
     }

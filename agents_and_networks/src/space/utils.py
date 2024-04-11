@@ -4,7 +4,7 @@ import geopandas as gpd
 import mesa
 import numpy as np
 import pyproj
-from shapely.geometry import LineString, MultiLineString
+from shapely.geometry import LineString, MultiLineString, Point
 from shapely.ops import transform
 import powerlaw as powerlaw
 
@@ -61,26 +61,42 @@ def segmented(lines: gpd.GeoSeries) -> gpd.GeoSeries:
     return gpd.GeoSeries([segment for line in lines for segment in _segmented(line)])
 
 
-# reference: https://gis.stackexchange.com/questions/367228/using-shapely-interpolate-to-evenly-re-sample-points-on-a-linestring-geodatafram
-def redistribute_vertices(geom, distance):
-    if isinstance(geom, LineString):
-            
-        if (num_vert := int(round(geom.length / distance))) == 0:
-            num_vert = 1
-        return LineString(
-            [
-                geom.interpolate(float(n) / num_vert, normalized=True)
-                for n in range(num_vert + 1)
-            ]
-        )
-    
-    elif isinstance(geom, MultiLineString):
-        parts = [redistribute_vertices(part, distance) for part in geom]
-        return type(geom)([p for p in parts if not p.is_empty])
-    else:
-        raise TypeError(
-            f"Wrong type: {type(geom)}. Must be LineString or MultiLineString."
-        )
+# reference: https://gis.stackexchange.com/questions/367228/using-shapely-interpolate-to-evenly-re-sample-points-on-a-linestring-geodataframe
+# def redistribute_vertices(geom, distance):
+#     if isinstance(geom, LineString):
+#
+#         if (num_vert := int(round(geom.length / distance))) == 0:
+#             num_vert = 1
+#         return LineString(
+#             [
+#                 geom.interpolate(float(n) / num_vert, normalized=True)
+#                 for n in range(num_vert + 1)
+#             ]
+#         )
+#
+#     elif isinstance(geom, MultiLineString):
+#         parts = [redistribute_vertices(part, distance) for part in geom]
+#         return type(geom)([p for p in parts if not p.is_empty])
+#     else:
+#         raise TypeError(
+#             f"Wrong type: {type(geom)}. Must be LineString or MultiLineString."
+#         )
+
+
+def redistribute_vertices_new(geom, traversal_times,maxspeed,time_step) -> list[mesa.space.FloatCoordinate]:
+    cum_sum_traversal_times = np.cumsum(traversal_times)/time_step  # Convert to fraction of timesteps for easier manipulation.
+    print(geom)
+    print(cum_sum_traversal_times)
+    vertex_list = []
+    for i in range(1,np.ceil(cum_sum_traversal_times[-1]).astype(int),1):
+        index = np.flatnonzero(cum_sum_traversal_times>i)[0]
+        print(index)
+        distance = (i-cum_sum_traversal_times[index-1])/(cum_sum_traversal_times[index]-cum_sum_traversal_times[index-1])
+        vertex_to_add = (geom[index].interpolate(distance,normalized=True))
+        vertex_list.append(vertex_to_add)
+    vertex_list.append(geom[-1].coords[1])
+    return LineString(vertex_list)
+
 
 
 class UnitTransformer:

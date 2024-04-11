@@ -121,7 +121,7 @@ if __name__ == '__main__':
         #"bounding_box":(4.3338,51.9853,4.3658,52.0204), #Delft
         "bounding_box": (4.1874, 51.8280, 4.593, 52.0890), #Noord en zuid holland
         "cell_file": os.path.join(script_dir,'..', '..', 'data', '20191202131001.csv'),
-        "trajectory_file": os.path.join(script_dir,'..', '..', 'outputs', 'trajectories','output_trajectory.csv'),
+        "trajectory_file": os.path.join(script_dir,'..', '..', 'outputs', 'trajectories','output_trajectory_7hours.csv'),
         "output_file": os.path.join(script_dir,'..', '..', 'outputs', 'trajectories','output_cell.csv'),
         "event_rate": 10 #number of events per hour
     }

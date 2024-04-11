@@ -18,7 +18,7 @@ from src.space.netherlands import Netherlands
 from src.space.road_network import NetherlandsWalkway
 from shapely.geometry import Point
 from scipy.stats import poisson
-
+import random
 from pyproj import Transformer
 
 
@@ -168,10 +168,11 @@ class AgentsAndNetworks(mesa.Model):
     def _load_buildings_from_file(
         self, buildings_file: str, crs: str
     ) -> None:
-        # read in buildings from normal bounding box
-        buildings_df = gpd.read_file(buildings_file, bbox=(self.bounding_box)).sample(frac = 0.001)
+        # read in buildings from normal bounding box. If it is a large file>500000 buildings~half of zuid holland
+        # then there will be 2000 to 10000 buildings, for smaller bounding boxes it will be less items.
+        random_integer = random.randint(100,500)
+        buildings_df = gpd.read_file(buildings_file, bbox=(self.bounding_box),rows=slice(0,10000*random_integer+1,random_integer))
         print("number buildings: ",len(buildings_df))
-        # if allow trips, read in buildings from bounding box corresponding to trip
 
         buildings_df.index.name = "unique_id"
         buildings_df = buildings_df.set_crs(self.data_crs, allow_override=True).to_crs(
@@ -192,7 +193,8 @@ class AgentsAndNetworks(mesa.Model):
                 .set_crs(self.data_crs, allow_override=True)
                 .to_crs(crs)
         )
-        self.walkway = NetherlandsWalkway(lines=walkway_df["geometry"])
+        self.walkway = NetherlandsWalkway(lines=walkway_df[walkway_df['maxspeed']>0]["geometry"],maxspeed=walkway_df[walkway_df['maxspeed']>0]["maxspeed"]
+        )
 
 
     def _set_building_entrance(self) -> None:
