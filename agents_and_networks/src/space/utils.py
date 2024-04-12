@@ -83,19 +83,25 @@ def segmented(lines: gpd.GeoSeries) -> gpd.GeoSeries:
 #         )
 
 
-def redistribute_vertices_new(geom, traversal_times,maxspeed,time_step) -> list[mesa.space.FloatCoordinate]:
-    cum_sum_traversal_times = np.cumsum(traversal_times)/time_step  # Convert to fraction of timesteps for easier manipulation.
-    print(geom)
-    print(cum_sum_traversal_times)
+def redistribute_vertices_new(geom, traversal_times,maxspeed,time_step) -> tuple([list[mesa.space.FloatCoordinate],list[float]]):
+    traversal_times = traversal_times/time_step # Convert to fraction of timesteps for easier manipulation.
+    cum_sum_traversal_times = np.append(0,np.cumsum(traversal_times))
+    maxspeed = np.append(maxspeed[0],maxspeed)
     vertex_list = []
+    speed_per_timestep = []
+    index_old = 0
     for i in range(1,np.ceil(cum_sum_traversal_times[-1]).astype(int),1):
-        index = np.flatnonzero(cum_sum_traversal_times>i)[0]
-        print(index)
-        distance = (i-cum_sum_traversal_times[index-1])/(cum_sum_traversal_times[index]-cum_sum_traversal_times[index-1])
-        vertex_to_add = (geom[index].interpolate(distance,normalized=True))
+        index_new = np.flatnonzero(cum_sum_traversal_times>i)[0]
+        distance = (i-cum_sum_traversal_times[index_new-1])/(cum_sum_traversal_times[index_new]-cum_sum_traversal_times[index_new-1])
+        vertex_to_add = (geom[index_new-1].interpolate(distance,normalized=True))
         vertex_list.append(vertex_to_add)
-    vertex_list.append(geom[-1].coords[1])
-    return LineString(vertex_list)
+        current_speed = ((cum_sum_traversal_times[index_old]-(i-1))*maxspeed[index_old]
+                         +sum(traversal_times[index_old:index_new]*maxspeed[index_old+1:index_new+1])
+                         +(i-cum_sum_traversal_times[index_new])*maxspeed[index_new]
+                         )
+        speed_per_timestep.append(current_speed)
+        index_old = index_new
+    return LineString(vertex_list),speed_per_timestep
 
 
 

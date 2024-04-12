@@ -84,7 +84,7 @@ class AgentsAndNetworks(mesa.Model):
         rho,
         gamma,
         bounding_box,
-        commuter_speed_walk,
+        walking_allowed: bool,
         model_crs="epsg:3857",
         start_date="2023-05-01",
     ) -> None:
@@ -97,10 +97,10 @@ class AgentsAndNetworks(mesa.Model):
         self.space.number_commuters = num_commuters
         self.bounding_box = bounding_box
         self.step_duration = step_duration
+        self.walking_allowed = walking_allowed
         self.positions_to_write = []
         self.positions = []
 
-        Commuter.SPEED_WALK = commuter_speed_walk * step_duration  # meters per tick.
         Commuter.speed = 0. #Updates the current speed so that it can be saved.
         Commuter.ALPHA = alpha
         Commuter.TAU_jump = tau_jump
@@ -170,8 +170,10 @@ class AgentsAndNetworks(mesa.Model):
     ) -> None:
         # read in buildings from normal bounding box. If it is a large file>500000 buildings~half of zuid holland
         # then there will be 2000 to 10000 buildings, for smaller bounding boxes it will be less items.
+        # Performance improvement compared to resampling,
+        # although resampling is better if you want random buildings instead of deterministic buildings.
         random_integer = random.randint(100,500)
-        buildings_df = gpd.read_file(buildings_file, bbox=(self.bounding_box),rows=slice(0,10000*random_integer+1,random_integer))
+        buildings_df = gpd.read_file(buildings_file, bbox=(self.bounding_box),rows=slice(0,100000*random_integer+1,random_integer))
         print("number buildings: ",len(buildings_df))
 
         buildings_df.index.name = "unique_id"
@@ -193,8 +195,10 @@ class AgentsAndNetworks(mesa.Model):
                 .set_crs(self.data_crs, allow_override=True)
                 .to_crs(crs)
         )
-        self.walkway = NetherlandsWalkway(lines=walkway_df[walkway_df['maxspeed']>0]["geometry"],maxspeed=walkway_df[walkway_df['maxspeed']>0]["maxspeed"]
-        )
+        if (self.walking_allowed == True):
+            walkway_df.loc[walkway_df['maxspeed']==0,'maxspeed'] = 5 # Set walking speed to 5 km/h. This will cause additional roads to be used,
+                                                      # so simulation will be slower.
+        self.walkway = NetherlandsWalkway(lines=walkway_df[walkway_df['maxspeed']>0]["geometry"],maxspeed=walkway_df[walkway_df['maxspeed']>0]["maxspeed"])
 
 
     def _set_building_entrance(self) -> None:

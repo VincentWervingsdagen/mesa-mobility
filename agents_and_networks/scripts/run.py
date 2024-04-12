@@ -15,17 +15,15 @@ if __name__ == "__main__":
     model_params = {
         "data_crs": "epsg:4326",
         "start_date": '2023-05-01',
-        #"bounding_box":(4.3338,51.9853,4.3658,52.0204), #Delft
-        "bounding_box": (4.1874, 51.8280, 4.593, 52.0890), #Zuid holland
+        "bounding_box":(4.3338,51.9853,4.3658,52.0204), #Delft
+        #"bounding_box": (4.1874, 51.8280, 4.593, 52.0890), #Zuid holland
         "num_commuters": mesa.visualization.Slider(
             "Number of Commuters", value=1, min_value=1, max_value=10, step=1
         ),
-        "commuter_speed_walk": mesa.visualization.Slider(
-            "Commuter Walking Speed (m/s)",
-            value=5.0,
-            min_value=0.1,
-            max_value=50,
-            step=0.1,
+        "walking_allowed": mesa.visualization.Choice(
+            "Can paths or sidewalks be used?",
+            value=True,
+            choices=[False,True]
         ),
         "step_duration": mesa.visualization.NumberInput(
             "Step Duration (seconds)",
@@ -37,11 +35,11 @@ if __name__ == "__main__":
         ),
         "tau_jump_min": mesa.visualization.NumberInput(
             "Min jump (km) jump size distribution (truncated power law)",
-            value=50,
+            value=0.1,
         ),
         "tau_jump": mesa.visualization.NumberInput(
             "Max jump (km) jump size distribution (truncated power law)",
-            value=100,
+            value=0.2,
         ),
         "beta": mesa.visualization.NumberInput(
             "Exponent waiting time distribution (truncated power law)",
@@ -49,11 +47,11 @@ if __name__ == "__main__":
         ),
         "tau_time_min": mesa.visualization.NumberInput(
             "Min time (hour) waiting time distribution (truncated power law)",
-            value=0.1,
+            value=0.01,
         ),
         "tau_time": mesa.visualization.NumberInput(
             "Max time (hour) waiting time distribution (truncated power law)",
-            value=0.11,
+            value=0.02,
         ),
         "rho": mesa.visualization.NumberInput(
             "Constant in probability of exploration",

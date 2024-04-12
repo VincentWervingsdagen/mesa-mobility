@@ -35,7 +35,7 @@ class Commuter(mg.GeoAgent):
     wait_time_m: int
     status: str  # work, home, or transport
     speed: float
-    SPEED_WALK: float
+    maxspeed: list[float]
     ALPHA: float # jump
     TAU_jump: float # max jump
     TAU_jump_min: float
@@ -52,6 +52,7 @@ class Commuter(mg.GeoAgent):
         self.visited_locations = []
         self.frequencies = []
         self._set_wait_time()
+        self.maxspeed = []
         
 
     def __repr__(self) -> str:
@@ -110,13 +111,13 @@ class Commuter(mg.GeoAgent):
 
             self._path_select()
             self.status = "transport"
-            self.speed = self.SPEED_WALK/60
                      
 
     def _move(self) -> None:
         if self.status == "transport":
             if self.step_in_path < len(self.my_path):
                 next_position = self.my_path[self.step_in_path]
+                self.speed = self.maxspeed[self.step_in_path]
                 self.model.space.move_commuter(self, next_position, False)
                 self.step_in_path += 1
             else:
@@ -186,7 +187,7 @@ class Commuter(mg.GeoAgent):
             path = [LineString([u,v]) for u,v in zip(self.my_path[:-1],self.my_path[1:])]
             maxspeed = self.model.walkway.get_maxspeed(path)
             traversal_times = self.model.walkway.get_traversal_times(path)
-            redistributed_path = redistribute_vertices_new(
+            redistributed_path,self.maxspeed = redistribute_vertices_new(
                     path, traversal_times,maxspeed,self.model.step_duration
             )
             self.my_path = list(redistributed_path.coords)
