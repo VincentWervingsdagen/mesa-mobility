@@ -226,7 +226,7 @@ class AgentsAndNetworks(mesa.Model):
                 self.positions[i][1] = y
 
 
-        if (self.minute == 0 & self.second==0):
+        if (total_seconds/self.step_duration == 60):
             self.__write_to_file()
             self.positions_to_write = []
                 

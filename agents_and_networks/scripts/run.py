@@ -27,7 +27,7 @@ if __name__ == "__main__":
         ),
         "step_duration": mesa.visualization.NumberInput(
             "Step Duration (seconds)",
-            value=10,
+            value=60,
         ),
         "alpha": mesa.visualization.NumberInput(
             "Exponent jump size distribution (truncated power law)",

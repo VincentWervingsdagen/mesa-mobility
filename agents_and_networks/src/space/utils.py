@@ -101,7 +101,15 @@ def redistribute_vertices_new(geom, traversal_times,maxspeed,time_step) -> tuple
                          )
         speed_per_timestep.append(current_speed)
         index_old = index_new
-    return LineString(vertex_list),speed_per_timestep
+    vertex_list.append(geom[-1].coords[1])
+    speed_per_timestep.append(maxspeed[-1])
+    print(vertex_list)
+    print(maxspeed)
+    if (len(vertex_list) == 1):  # Check whether the list is empty, just return last coordinate if it is the case.
+        print('Path is to short, thus list is almost empty!')
+        return LineString([Point(geom[0].coords[0]),Point(geom[-1].coords[1])]), [maxspeed[0],maxspeed[-1]] #  Just return start and end point.
+    else:
+        return LineString(vertex_list),speed_per_timestep
 
 
 
