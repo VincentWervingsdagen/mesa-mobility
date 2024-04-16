@@ -8,7 +8,6 @@ from pyproj import Transformer
 from datetime import datetime, timedelta
 
 from random import choices
-
 from telcell.data.models import Measurement, Point, RDPoint
 
 import os
@@ -60,7 +59,7 @@ def main(model_params):
     
     # Create seconds passed column for time sampling
     df_trajectory['seconds'] = [(datetime.strptime(x,"%Y-%m-%d %H:%M:%S") - start).total_seconds() for x in df_trajectory['timestamp']]
-    
+
     # Store in list for ease of implementation
     all_cells = np.array(list(zip(df_cell['lat'],df_cell['lon'])))
 
@@ -70,7 +69,6 @@ def main(model_params):
     # Load in coverage model, we utilize the model with mnc 8 and 0 time difference
     coverage_model_path = open(os.path.join(script_dir, '..','..', 'data', 'coverage_model'),'rb')
     coverage_models = pickle.load(coverage_model_path)
-    print(coverage_models)
     model = coverage_models[('16',(0, 0))]
 
     # Initialize variables 
@@ -98,7 +96,8 @@ def main(model_params):
     for i in range(len(agents)):
         agents_df = df_trajectory[df_trajectory['owner'].isin([agents[i]])] 
         max = agents_df['seconds'].iloc[-1]
-        
+        time_until_event = np.random.default_rng().geometric(p=1/(60*model_params['event_rate']), size=int(max/10)).tolist()
+        switch_towers = np.random.default_rng().uniform(0,1, size=int(max/10)).tolist()
         print("Agents",i)
         
         # if we do independent sampling then we want to do full sampling twice for each phone
@@ -116,10 +115,10 @@ def main(model_params):
 
         # for each phone we sample from a poisson distribution with rate of one per hour
         for phone in range(samples):
-            p_time = np.random.default_rng().exponential(scale=3600)
             index = 0
             x_old, y_old = 0, 0
-            index_cell = 0
+            p_time = 1
+
             while(p_time <= max):
                 while (agents_df['seconds'].iloc[index] < p_time):
                     index += 1
@@ -127,12 +126,13 @@ def main(model_params):
                 y = agents_df['cellinfo.wgs84.lon'].iloc[index-1]
                 rd = Point(lat = x,lon = y).convert_to_rd()
                 
-                if (x_old != round(rd.x/100)*100 or y_old != round(rd.y/100)*100):
-                    probabilities = [grid.get_value_for_coord(RDPoint(x=rd.x,y = rd.y)) for grid in all_grids]
-
-                index_cell = choices(list(range(len(probabilities))), weights = probabilities)[0]
-                x_old = round(rd.x/100)*100
-                y_old = round(rd.y/100)*100
+                if ((x_old != round(rd.x/100)*100 or y_old != round(rd.y/100)*100)
+                or (switch_towers.pop() < model_params["probability_switch"])):
+                    # Take the square of the probabilities so that closer cell towers will be selected more often.
+                    probabilities = [grid.get_value_for_coord(RDPoint(x=rd.x,y = rd.y))**2 for grid in all_grids]
+                    index_cell = choices(list(range(len(probabilities))), weights = probabilities)[0]
+                    x_old = round(rd.x/100)*100
+                    y_old = round(rd.y/100)*100
 
 
                 agent = re.sub("[^0-9]", "", agents[i])
@@ -152,7 +152,7 @@ def main(model_params):
                 output_writer.writerow([writing_id, f"Agent{agent}", f"{agent}_{phone+1}", 
                                     start + timedelta(seconds = p_time), all_cells[index_cell][0], all_cells[index_cell][1], all_degree[index_cell],"0-0-0"])
                 
-                p_time += np.random.default_rng().exponential(scale=3600)
+                p_time += time_until_event.pop(1)
                 writing_id += 1
 
     output_file.close()
@@ -167,8 +167,10 @@ if __name__ == '__main__':
         #"bounding_box":(4.3338,51.9853,4.3658,52.0204), #Delft
         "bounding_box": (4.1874, 51.8280, 4.593, 52.0890), #Noord en zuid holland
         "cell_file": os.path.join(script_dir, '..','..', 'data', '20191202131001.csv'),
-        "trajectory_file": os.path.join(script_dir, '..','..', 'outputs', 'trajectories','output_trajectory_7hours.csv'),
+        "trajectory_file": os.path.join(script_dir, '..','..', 'outputs', 'trajectories','output_trajectory_1travel.csv'),
         "output_file": os.path.join(script_dir, '..','..', 'outputs', 'trajectories','output_cell.csv'),
-        "sampling_method": 1
+        "sampling_method": 4,
+        "event_rate":6,  # number of events per hour
+        "probability_switch":0.1 # Probability of switching towers if the phone is stationary
     }
     main(model_params)

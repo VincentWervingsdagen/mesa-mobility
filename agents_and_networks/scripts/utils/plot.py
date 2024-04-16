@@ -11,7 +11,7 @@ end_date = '2023-05-02'
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 df_cell = pd.read_csv(os.path.join(script_dir,'..','..', 'outputs', 'trajectories', 'output_cell.csv'))
-df_trajectory = pd.read_csv(os.path.join(script_dir,'..','..', 'outputs', 'trajectories', 'output_trajectory_7hours.csv'))
+df_trajectory = pd.read_csv(os.path.join(script_dir,'..','..', 'outputs', 'trajectories', 'output_trajectory_1travel.csv'))
 
 df_trajectory.columns = ['id', 'owner', 'timestamp', 'cellinfo.wgs84.lon', 'cellinfo.wgs84.lat', 'status','speed']
 mask = (df_trajectory['timestamp'] >= start_date) & (df_trajectory['timestamp'] <= end_date)
@@ -26,19 +26,6 @@ bounding_box = (4.1874, 51.8280, 4.593, 52.0890) #Noord en zuid holland
 walkway_file = os.path.join(script_dir,'..','..', 'data', 'zuid-holland', 'gis_osm_roads_free_1.zip')
 walkway_file_trip = os.path.join(script_dir,'..','..', 'data', 'noord-holland', 'gis_osm_roads_free_1.zip')
 
-# files = [walkway_file,walkway_file_trip]
-# boxes = [bounding_box1,bounding_box2]
-# walkway_df = gpd.GeoDataFrame(pd.concat([gpd.read_file(i,j) for (i,j) in zip(files,boxes)], 
-#                         ignore_index=True))
-
-
-
-# motorway_df = gpd.GeoDataFrame(pd.concat([gpd.read_file(i,bounding_box) for i in files], 
-#                         ignore_index=True))
-# # motorway_df = motorway_df[motorway_df['maxspeed'].isin([100,80,60])]
-# motorway_df = motorway_df[motorway_df['fclass'].isin(['motorway','motorway_link','secondary'])]
-
-# walkway_df = gpd.GeoDataFrame(pd.concat([walkway_df,motorway_df]))
 
 agents = sorted(pd.unique(df_cell['owner']))
 print(agents)
@@ -60,14 +47,11 @@ ax3.set_ylim(min(df_trajectory['cellinfo.wgs84.lat'])-0.01, max(df_trajectory['c
 
 walkway_df = (gpd.read_file(walkway_file, bounding_box,engine="pyogrio"))
 
-# files = [walkway_file,walkway_file_trip]
-
-# walkway_df = gpd.GeoDataFrame(pd.concat([gpd.read_file(i,bounding_box) for i in files],
-#                         ignore_index=True))
 walkway_df.plot(ax=ax1,color='black',linewidth=0.5)
 walkway_df.plot(ax=ax2,color='black',linewidth=0.5)
 walkway_df.plot(ax=ax3,color='black',linewidth=0.5)
 
+print(df_cell['device'])
 for i in range(0,1):
     agents_cell = df_cell[df_cell['owner'].isin([agents[i]])]
     agents_trajectory = df_trajectory[df_trajectory['owner'].isin([agents[i]])]
@@ -106,8 +90,8 @@ for i in range(0,1):
     lat1 = phone1_df['cellinfo.wgs84.lat']
 
     fig, ax = plt.subplots()
-    ax.set_xlim(min(df_trajectory['cellinfo.wgs84.lon'])-0.01, max(df_trajectory['cellinfo.wgs84.lon'])+0.01)
-    ax.set_ylim(min(df_trajectory['cellinfo.wgs84.lat'])-0.01, max(df_trajectory['cellinfo.wgs84.lat'])+0.01)
+    ax.set_xlim(min(df_trajectory['cellinfo.wgs84.lon'])-0.05, max(df_trajectory['cellinfo.wgs84.lon'])+0.05)
+    ax.set_ylim(min(df_trajectory['cellinfo.wgs84.lat'])-0.05, max(df_trajectory['cellinfo.wgs84.lat'])+0.05)
 
     walkway_df.plot(ax=ax, color='black', linewidth=0.5,alpha=0.5)
     # Scatter plot of initial data
