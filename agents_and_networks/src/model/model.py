@@ -196,7 +196,7 @@ class AgentsAndNetworks(mesa.Model):
                 .to_crs(crs)
         )
         if (self.walking_allowed == True):
-            walkway_df.loc[walkway_df['maxspeed']==0,'maxspeed'] = 5 # Set walking speed to 5 km/h. This will cause additional roads to be used,
+            walkway_df.loc[walkway_df['maxspeed']==0,'maxspeed'] = 5 # Set walking speed to 5 km/h. This will cause additional roads and paths to be used,
                                                       # so simulation will be slower.
         self.walkway = NetherlandsWalkway(lines=walkway_df[walkway_df['maxspeed']>0]["geometry"],maxspeed=walkway_df[walkway_df['maxspeed']>0]["maxspeed"])
 
@@ -224,9 +224,9 @@ class AgentsAndNetworks(mesa.Model):
                 self.positions_to_write.append([i,time,x,y,commuter.status,commuter.speed])
                 self.positions[i][0] = x
                 self.positions[i][1] = y
-
-
-        if (total_seconds/self.step_duration == 60):
+            if ((total_seconds // self.step_duration) % 60 == 0):
+                self.positions_to_write.append([i, time, x, y, commuter.status, commuter.speed])
+        if ((total_seconds//self.step_duration)%60 == 0):
             self.__write_to_file()
             self.positions_to_write = []
                 
