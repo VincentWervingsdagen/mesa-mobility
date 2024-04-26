@@ -80,6 +80,6 @@ data = pd.read_csv(open(os.path.join(script_dir, '..','..', 'outputs', 'trajecto
 
 print(data.columns)
 
-data[['estimate_lat','estimate_lon']] = simulation(51.9181,4.4739,1000,data)
+data[['estimate_x','estimate_y']] = simulation(51.9181,4.4739,1000,data)
 
 data.to_csv(os.path.join(script_dir, '..','..', 'outputs', 'trajectories', 'output_cell.csv'))

@@ -4,13 +4,14 @@ import geopandas as gpd
 import re
 import os
 from matplotlib.widgets import Slider, Button
+import ast
 
 # Start and End date for trajectory analysis
 start_date = '2023-05-01'
 end_date = '2023-05-02'
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-df_cell = pd.read_csv(os.path.join(script_dir,'..','..', 'outputs', 'trajectories', 'output_cell.csv'))
+df_cell = pd.read_csv(os.path.join(script_dir,'..','..', 'outputs', 'trajectories', 'output_cell_pf_roads.csv'))
 df_trajectory = pd.read_csv(os.path.join(script_dir,'..','..', 'outputs', 'trajectories', 'output_trajectory_1travel.csv'))
 
 df_trajectory.columns = ['id', 'owner', 'timestamp', 'cellinfo.wgs84.lon', 'cellinfo.wgs84.lat', 'status','speed']
@@ -26,7 +27,6 @@ bounding_box = (4.1874, 51.8280, 4.593, 52.0890) #Noord en zuid holland
 walkway_file = os.path.join(script_dir,'..','..', 'data', 'zuid-holland', 'gis_osm_roads_free_1.zip')
 walkway_file_trip = os.path.join(script_dir,'..','..', 'data', 'noord-holland', 'gis_osm_roads_free_1.zip')
 
-
 agents = sorted(pd.unique(df_cell['owner']))
 print(agents)
 
@@ -35,7 +35,7 @@ df_trajectory['timestamp2'] = pd.to_datetime(df_trajectory['timestamp'])
 df_trajectory = df_trajectory.set_index('timestamp2')
 df_trajectory = df_trajectory.resample('min').ffill()
 
-fig, (ax1,ax2,ax3) = plt.subplots(1,3)
+fig, (ax1,ax2,ax3,ax4) = plt.subplots(1,4)
 ax1.set_xlim(min(df_trajectory['cellinfo.wgs84.lon'])-0.01, max(df_trajectory['cellinfo.wgs84.lon'])+0.01)
 ax1.set_ylim(min(df_trajectory['cellinfo.wgs84.lat'])-0.01, max(df_trajectory['cellinfo.wgs84.lat'])+0.01)
 
@@ -45,13 +45,16 @@ ax2.set_ylim(min(df_cell['cellinfo.wgs84.lat'])-0.01, max(df_cell['cellinfo.wgs8
 ax3.set_xlim(min(df_trajectory['cellinfo.wgs84.lon'])-0.01, max(df_trajectory['cellinfo.wgs84.lon'])+0.01)
 ax3.set_ylim(min(df_trajectory['cellinfo.wgs84.lat'])-0.01, max(df_trajectory['cellinfo.wgs84.lat'])+0.01)
 
+ax4.set_xlim(min(df_trajectory['cellinfo.wgs84.lon'])-0.01, max(df_trajectory['cellinfo.wgs84.lon'])+0.01)
+ax4.set_ylim(min(df_trajectory['cellinfo.wgs84.lat'])-0.01, max(df_trajectory['cellinfo.wgs84.lat'])+0.01)
+
+
 walkway_df = (gpd.read_file(walkway_file, bounding_box,engine="pyogrio"))
 
 walkway_df.plot(ax=ax1,color='black',linewidth=0.5)
 walkway_df.plot(ax=ax2,color='black',linewidth=0.5)
 walkway_df.plot(ax=ax3,color='black',linewidth=0.5)
 
-print(df_cell['device'])
 for i in range(0,1):
     agents_cell = df_cell[df_cell['owner'].isin([agents[i]])]
     agents_trajectory = df_trajectory[df_trajectory['owner'].isin([agents[i]])]
@@ -59,27 +62,36 @@ for i in range(0,1):
     lon = agents_trajectory['cellinfo.wgs84.lon']
     lat = agents_trajectory['cellinfo.wgs84.lat']
 
-    lon_est = agents_cell['estimate_lon']
-    lat_est = agents_cell['estimate_lat']
+    lon_est = agents_cell['estimate_x']
+    lat_est = agents_cell['estimate_y']
 
     phone1_df = agents_cell[agents_cell['device'].isin([re.sub("[^0-9]", "", agents[i])+"_1"])]
     phone2_df = agents_cell[agents_cell['device'].isin([re.sub("[^0-9]", "", agents[i])+"_2"])]
 
-    lon1 = phone1_df['cellinfo.wgs84.lon']
-    lat1 = phone1_df['cellinfo.wgs84.lat']
+    lon_tower = phone1_df['cellinfo.wgs84.lon']
+    lat_tower = phone1_df['cellinfo.wgs84.lat']
 
     ax1.plot(lon, lat, zorder=5,linewidth=2,color='blue')
     ax1.scatter(lon, lat, zorder=10, s=10,color='blue')
     ax1.set_title('trajectories')
 
-    ax2.scatter(lon1, lat1, zorder=10,color='orange',s=50)
+    ax2.scatter(lon_tower, lat_tower, zorder=10,color='orange',s=50)
     ax2.set_title('Cell Towers: Phone')
+
+    x_brown = []
+    y_brown = []
+    for i, path in enumerate(phone1_df['paths']):
+        x_brown_dummy, y_brown_dummy = zip(*ast.literal_eval(path))
+        x_brown.append(x_brown_dummy)
+        y_brown.append(y_brown_dummy)
 
     ax3.plot(lon_est, lat_est, zorder=5,linewidth=1.5, color='red')
     ax3.scatter(lon_est, lat_est, zorder=10,s=10,color = 'red')
-    ax3.plot(lon, lat, zorder=5,linewidth=1.5,color='blue')
-    ax3.scatter(lon, lat, zorder=10,s=10,color='blue')
     ax3.set_title('estimate path')
+
+    ax4.plot(x_brown,y_brown,color='red',linewidth=1.5)
+    ax4.scatter(x_brown,y_brown,color='red',s=10)
+    ax4.set_title('Brownian bridge estimate')
 
     plt.show()
 
