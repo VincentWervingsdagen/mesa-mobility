@@ -24,19 +24,24 @@ def transform_data(observation_file,level):
     return df_normal,df_burner
 
 def state_space_Omega(cell_file,bounding_box,antenna_type,level='postal3'):
+    if bounding_box == (4.1874, 51.8280, 4.593, 52.0890): # You can calculate the state space omega for differnt bounding boxes with
+        # Calculate_distance_omega.py as well and then read them in here, to make the program a lot quicker for antenna/postal state space.
+        return pd.read_csv('./LTE/{0}.csv'.format(level))
+    else:
+        pass
     df_cell = pd.read_csv(cell_file)
     #drop useless columns
     df_cell = df_cell.drop(['Samenvatting','Vermogen', 'Frequentie','Veilige afstand','id','objectid','WOONPLAATSNAAM','DATUM_PLAATSING',
-       'DATUM_INGEBRUIKNAME','GEMNAAM','Hoogte','Hoofdstraalrichting','sat_code'],axis=1)
+           'DATUM_INGEBRUIKNAME','GEMNAAM','Hoogte','Hoofdstraalrichting','sat_code'],axis=1)
     #drop types except the antenna_type
     df_cell = df_cell.loc[df_cell['HOOFDSOORT'] == antenna_type]
-    # Transform to wgs84
+         #Transform to wgs84
     df_cell['lat'], df_cell['lon'] = Transformer.from_crs("EPSG:28992", "EPSG:4979").transform(df_cell['X'],
-                                                                                               df_cell['Y'])
+                                                                                                   df_cell['Y'])
     # Only keep cell towers in bounding box
     df_cell = df_cell.loc[
-        (df_cell['lon'] >= bounding_box[0]) & (df_cell['lon'] <= bounding_box[2])
-        & (df_cell['lat'] >= bounding_box[1]) & (df_cell['lat'] <= bounding_box[3])]
+            (df_cell['lon'] >= bounding_box[0]) & (df_cell['lon'] <= bounding_box[2])
+            & (df_cell['lat'] >= bounding_box[1]) & (df_cell['lat'] <= bounding_box[3])]
 
     if level == 'antenna':
         return np.sort(np.unique(df_cell['POSTCODE'].dropna()))
@@ -94,13 +99,20 @@ def distance_prior(number_of_states,states,level):
 def population_prior():
     raise NotImplementedError
 
-def discrete_markov_chain(df,prior,states): # Calculates posterior mean markov chain
+def discrete_markov_chain(df,prior,states,loops_allowed): # Calculates posterior mean markov chain
     # First construct count matrix
     matrix_normal = pd.DataFrame(0.0,index=states,columns=states)
     for i in df.index[:-1]:
         matrix_normal.loc[df['cellinfo.postal_code'][i],df['cellinfo.postal_code'][i+1]] += 1
     # Add prior.
     matrix_normal = matrix_normal + prior
+
+    if loops_allowed == True:
+        pass
+    elif loops_allowed == False:
+        matrix_normal.values[[np.arange(df.shape[0])] * 2] = 0
+    else:
+        raise ValueError('Loops allowed must be a bool variable.')
     #Normalise
     matrix_normal = matrix_normal/matrix_normal.apply(func='sum',axis=0)
     matrix_normal = np.transpose(matrix_normal)

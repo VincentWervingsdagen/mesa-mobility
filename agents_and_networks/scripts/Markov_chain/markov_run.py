@@ -11,5 +11,6 @@ MarkovChain(cell_file=os.path.join(script_dir, '..','..', 'data', '2019120213100
             state_space_level='postal', #options are either antenna, postal, postal3.
             prior_type='uniform', #options are either uniform, distance, population.
             markov_type='discrete', #options are either discrete or continuous.
-            distance ='cut-distance' # options are either cut-distance or freq-distance.
+            distance ='cut-distance', # options are either cut-distance or freq-distance.
+            loops_allowed = True # Decide whether you want to have self loops in your markov chain or not.
             )

@@ -26,7 +26,8 @@ class MarkovChain():
         antenna_type='LTE',
         prior_type = 'distance',
         markov_type = 'discrete',
-        distance = 'freq-distance'
+        distance = 'freq-distance',
+        loops_allowed = True
     ) -> None:
         self.bounding_box = bounding_box
         self.state_space_level = state_space_level
@@ -55,8 +56,8 @@ class MarkovChain():
 
         # Construct the markov chains
         if markov_type == 'discrete':
-            self.markov_chain_normal_phone = MC.discrete_markov_chain(df=self.observations_normal,prior=self.prior_chain,states=self.state_space)
-            self.markov_chain_burner_phone = MC.discrete_markov_chain(df=self.observations_burner,prior=self.prior_chain,states=self.state_space)
+            self.markov_chain_normal_phone = MC.discrete_markov_chain(df=self.observations_normal,prior=self.prior_chain,states=self.state_space,loops_allowed=loops_allowed)
+            self.markov_chain_burner_phone = MC.discrete_markov_chain(df=self.observations_burner,prior=self.prior_chain,states=self.state_space,loops_allowed=loops_allowed)
         elif markov_type == 'continuous':
             MC.continuous_markov_chain()
         else:
