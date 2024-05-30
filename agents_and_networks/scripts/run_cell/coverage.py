@@ -25,7 +25,7 @@ def main(model_params):
     # Setup output file
     output_file = open(model_params["output_file"], 'w')
     output_writer = csv.writer(output_file)
-    output_writer.writerow(['id','owner','device','timestamp','cellinfo.wgs84.lat','cellinfo.wgs84.lon','cellinfo.azimuth_degrees','cell'])    
+    output_writer.writerow(['id','owner','device','timestamp','cellinfo.wgs84.lat','cellinfo.wgs84.lon','cellinfo.azimuth_degrees','cellinfo.id','cellinfo.postal_code'])
 
     # Read in cell towers: 
     df_cell = pd.read_csv(model_params["cell_file"])
@@ -33,10 +33,10 @@ def main(model_params):
     # As coverage model does not take certain information into account (such as safe distance and power) 
     # we remove this information and drop any duplicates.
     df_cell = df_cell.drop(['Samenvatting','Vermogen', 'Frequentie','Veilige afstand','id'], axis=1)
-    df_cell = df_cell .drop_duplicates()
+    df_cell = df_cell.drop_duplicates()
 
     # Only consider LTE (4G) for now
-    df_cell = df_cell.loc[df_cell['HOOFDSOORT'] == "UMTS"]
+    df_cell = df_cell.loc[df_cell['HOOFDSOORT'] == "LTE"]
 
     # Transform to wgs84
     df_cell['lat'],df_cell['lon'] =  Transformer.from_crs("EPSG:28992","EPSG:4979").transform(df_cell['X'],df_cell['Y'])
@@ -69,35 +69,39 @@ def main(model_params):
     # Load in coverage model, we utilize the model with mnc 8 and 0 time difference
     coverage_model_path = open(os.path.join(script_dir, '..','..', 'data', 'coverage_model'),'rb')
     coverage_models = pickle.load(coverage_model_path)
-    model = coverage_models[('16',(0, 0))]
+    model = coverage_models[('8',(0, 0))]
 
     # Initialize variables 
     writing_id = 0
     all_grids = []
     all_degree = []
+    all_cell_id = []
     distances_home = []
+    all_cell_postal_code = []
 
-    # Read in grid with probabilites for each cell in our cell towere dataframe
+    # Read in grid with probabilites for each cell in our cell tower dataframe
     for i in range(len(all_cells)):
         grid = model.probabilities(Measurement(
                         coords=Point(lat=float(all_cells[i][0]),
                                     lon=float(all_cells[i][1])),
                         timestamp=datetime.now(),
-                        extra={'mnc': '16',
+                        extra={'mnc': '8',
                             'azimuth': df_cell['Hoofdstraalrichting'].iloc[i],
                             'antenna_id': df_cell['ID'].iloc[i],
-                            'zipcode': df_cell['POSTCODE'].iloc[i],
+                            'postal_code': df_cell['POSTCODE'].iloc[i],
                             'city': df_cell['WOONPLAATSNAAM'].iloc[i]}))
         # Store grids and azimuth degree for later use
         all_grids.append(grid)
         all_degree.append(df_cell['Hoofdstraalrichting'].iloc[i])
+        all_cell_id.append(df_cell['ID'].iloc[i])
+        all_cell_postal_code.append(df_cell['POSTCODE'].iloc[i])
 
     # loop over agents and obtain trajectory per agent, store max observed time
     for i in range(len(agents)):
         agents_df = df_trajectory[df_trajectory['owner'].isin([agents[i]])] 
         max = agents_df['seconds'].iloc[-1]
-        time_until_event = np.random.default_rng().geometric(p=1/(60*model_params['event_rate']), size=int(max/10)).tolist()
-        switch_towers = np.random.default_rng().uniform(0,1, size=int(max/10)).tolist()
+        time_until_event = np.random.default_rng().geometric(p=1/(3600*model_params['event_rate']), size=int(max*model_params['event_rate']/(100))).tolist()
+        switch_towers = np.random.default_rng().uniform(0,1, size=int(max*model_params['event_rate']/(100))).tolist()
         print("Agents",i)
         
         # if we do independent sampling then we want to do full sampling twice for each phone
@@ -113,7 +117,11 @@ def main(model_params):
             home = (home_loc['cellinfo.wgs84.lat'].iloc[0],home_loc['cellinfo.wgs84.lon'].iloc[0])
             distances_home = np.linalg.norm(X-np.array((home[0],home[1])), axis=1)
 
-        # for each phone we sample from a poisson distribution with rate of one per hour
+        time_until_event = np.random.default_rng().geometric(p=samples*1/(3600*model_params['event_rate']), size=int(samples*max*model_params['event_rate']/(100))).tolist()
+        switch_towers = np.random.default_rng().uniform(0,1, size=int(samples*max*model_params['event_rate']/(100))).tolist()
+        print("Agents",i)
+
+        # for each phone we sample from a poisson distribution with rate event_rate per hour
         for phone in range(samples):
             index = 0
             x_old, y_old = 0, 0
@@ -150,7 +158,7 @@ def main(model_params):
                         phone = 0
        
                 output_writer.writerow([writing_id, f"Agent{agent}", f"{agent}_{phone+1}", 
-                                    start + timedelta(seconds = p_time), all_cells[index_cell][0], all_cells[index_cell][1], all_degree[index_cell],"0-0-0"])
+                                    start + timedelta(seconds = p_time), all_cells[index_cell][0], all_cells[index_cell][1], all_degree[index_cell],all_cell_id[index_cell],all_cell_postal_code[index_cell]])
                 
                 p_time += time_until_event.pop(1)
                 writing_id += 1
@@ -162,15 +170,15 @@ def main(model_params):
 if __name__ == '__main__':
     model_params = {
         "start_date": '2023-05-01',
-        "end_date": '2023-05-02',
+        "end_date": '2023-06-01',
         # "bounding_box":(4.2009,51.8561,4.9423,52.3926),
         #"bounding_box":(4.3338,51.9853,4.3658,52.0204), #Delft
         "bounding_box": (4.1874, 51.8280, 4.593, 52.0890), #Noord en zuid holland
         "cell_file": os.path.join(script_dir, '..','..', 'data', '20191202131001.csv'),
-        "trajectory_file": os.path.join(script_dir, '..','..', 'outputs', 'trajectories','output_trajectory_1travel.csv'),
+        "trajectory_file": os.path.join(script_dir, '..','..', 'outputs', 'trajectories','output_trajectory_30days.csv'),
         "output_file": os.path.join(script_dir, '..','..', 'outputs', 'trajectories','output_cell.csv'),
-        "sampling_method": 4,
-        "event_rate":6,  # number of events per hour
+        "sampling_method": 1,
+        "event_rate":1,  # number of events per hour
         "probability_switch":0.1 # Probability of switching towers if the phone is stationary
     }
     main(model_params)
