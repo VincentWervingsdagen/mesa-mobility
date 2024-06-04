@@ -146,6 +146,7 @@ class AgentsAndNetworks(mesa.Model):
         
     def _create_commuters(self) -> None:
         date = self.start_date
+        self.common_work = self.space.get_random_building()
         for i in range(self.num_commuters):
             random_home = self.space.get_random_building()
             commuter = Commuter(
@@ -158,6 +159,8 @@ class AgentsAndNetworks(mesa.Model):
             commuter.set_next_location(commuter.my_home)
             random_home.visited = True
             commuter.set_visited_location(random_home,25)
+            self.common_work.visited = True
+            commuter.set_visited_location(self.common_work, 20)
             commuter.status = "home"
             commuter.speed = 0.
             self.space.add_commuter(commuter, True)
