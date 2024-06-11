@@ -4,7 +4,7 @@ import geopandas as gpd
 import mesa
 import numpy as np
 import pyproj
-from shapely.geometry import LineString, MultiLineString, Point
+from shapely.geometry import LineString, Point
 from shapely.ops import transform
 import powerlaw as powerlaw
 

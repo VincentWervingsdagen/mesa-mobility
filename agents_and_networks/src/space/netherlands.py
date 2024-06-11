@@ -27,11 +27,6 @@ class Netherlands(mg.GeoSpace):
         self._commuter_id_map = {}
         self.commuters = []
 
-    # def get_random_home(self) -> Building:
-    #     return random.choice(self.homes)
-
-    # def get_random_work(self) -> Building:
-    #     return random.choice(self.works)
     def get_random_building(self) -> Building:
         return random.choice(self.buildings)
 

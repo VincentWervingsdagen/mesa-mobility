@@ -10,7 +10,7 @@ import pyproj
 import shapely
 from shapely.geometry import LineString, Point
 from src.agent.building import Building
-from src.space.utils import redistribute_vertices_new, power_law_exponential_cutoff, segmented
+from src.space.utils import redistribute_vertices_new, power_law_exponential_cutoff
 
 
 class Commuter(mg.GeoAgent):
@@ -138,6 +138,7 @@ class Commuter(mg.GeoAgent):
         new_point = Point(self.geometry.x + jump_length * math.cos(theta),
         self.geometry.y + jump_length * math.sin(theta))      
         min_location = self.model.space.get_nearest_building(new_point, visited_locations)
+
         # Set new location as building closest to this point
         min_location.visited = True
         self.set_next_location(min_location)

@@ -1,5 +1,6 @@
 import mesa
 import mesa_geo as mg
+from config import BOUNDING_BOX, START_DATE, BUILDING_FILE, STREET_FILE, OUTPUT_TRAJECTORY_FILE
 from src.model.model import AgentsAndNetworks
 from src.visualization.server import (
     agent_draw,
@@ -7,18 +8,16 @@ from src.visualization.server import (
     status_chart,
     location_chart,
 )
-import os
 
-script_dir = os.path.dirname(os.path.abspath(__file__))
 
 if __name__ == "__main__":
     model_params = {
         "data_crs": "epsg:4326",
-        "start_date": '2023-05-01',
-        #"bounding_box":(4.3338,51.9853,4.3658,52.0204), #Delft
-        "bounding_box": (4.1874, 51.8280, 4.593, 52.0890), #Zuid holland
-        "num_commuters": mesa.visualization.Slider(
-            "Number of Commuters", value=1, min_value=1, max_value=10, step=1
+        "start_date": START_DATE,
+        "bounding_box":BOUNDING_BOX,
+        "num_commuters": mesa.visualization.NumberInput(
+            "Number of agents",
+            value=10,
         ),
         "walking_allowed": mesa.visualization.Choice(
             "Can paths or sidewalks be used?",
@@ -26,43 +25,43 @@ if __name__ == "__main__":
             choices=[False,True]
         ),
         "step_duration": mesa.visualization.NumberInput(
-            "Step Duration (seconds)",
-            value=10,
+            "Step duration (seconds)",
+            value=60,
         ),
         "alpha": mesa.visualization.NumberInput(
-            "Exponent jump size distribution (truncated power law)",
+            "Exponent travel distance distribution (truncated power law)",
             value=0.55,
         ),
         "tau_jump_min": mesa.visualization.NumberInput(
-            "Min jump (km) jump size distribution (truncated power law)",
-            value=10,
+            "Min travel distance (km)",
+            value=1.0,
         ),
         "tau_jump": mesa.visualization.NumberInput(
-            "Max jump (km) jump size distribution (truncated power law)",
-            value=100,
+            "Max travel distance (km)",
+            value=100.0,
         ),
         "beta": mesa.visualization.NumberInput(
             "Exponent waiting time distribution (truncated power law)",
             value=0.8,
         ),
         "tau_time_min": mesa.visualization.NumberInput(
-            "Min time (hour) waiting time distribution (truncated power law)",
-            value=0.01,
+            "Min waiting time (hour)",
+            value=0.33,
         ),
         "tau_time": mesa.visualization.NumberInput(
-            "Max time (hour) waiting time distribution (truncated power law)",
-            value=0.11,
+            "Max waiting time (hour)",
+            value=17,
         ),
         "rho": mesa.visualization.NumberInput(
             "Constant in probability of exploration",
-            value=2,
+            value=1,
         ),
         "gamma": mesa.visualization.NumberInput(
             "Exponent in probability of exploration",
-            value=1,
+            value=2,
         ),
-        "buildings_file": os.path.join(script_dir, '..', 'data', 'zuid-holland', 'gis_osm_buildings_a_free_1.zip'),
-        "walkway_file": os.path.join(script_dir, '..', 'data', 'zuid-holland', 'gis_osm_roads_free_1.zip'),
+        "buildings_file": BUILDING_FILE,
+        "walkway_file": STREET_FILE,
     }
 
     map_element = mg.visualization.MapModule(agent_draw, map_height=600, map_width=600)
@@ -70,8 +69,8 @@ if __name__ == "__main__":
         AgentsAndNetworks,
         # use following if you want map functionality
         [map_element, clock_element],
-        #[clock_element],
-        "Agents and Networks",
+        # [clock_element],
+        "Mesa Mobility extended with EPR",
         model_params,
     )
     server.launch()

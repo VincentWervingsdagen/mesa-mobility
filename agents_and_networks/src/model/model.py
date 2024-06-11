@@ -1,23 +1,22 @@
 import uuid
 from functools import partial
 import geopandas as gpd
-import numpy as np
+
 import mesa
 import mesa_geo as mg
 import pandas as pd
-from shapely.geometry import Point
+
 import csv
+import os
 
 from datetime import datetime, timedelta
-
-import os
 
 from src.agent.building import Building
 from src.agent.commuter import Commuter
 from src.space.netherlands import Netherlands
 from src.space.road_network import NetherlandsWalkway
 from shapely.geometry import Point
-from scipy.stats import poisson
+
 import random
 from pyproj import Transformer
 
@@ -33,7 +32,7 @@ def get_num_commuters_by_status(model, status: str) -> int:
     return len(commuters)
 
 
-def get_average_visited_locations(model) -> list:
+def get_average_visited_locations(model) -> float:
     commuters = [
         len(commuter.visited_locations) for commuter in model.schedule.agents 
     ]
@@ -67,6 +66,7 @@ class AgentsAndNetworks(mesa.Model):
     writing_id_trajectory:int
     common_work: Building
     datacollector: mesa.DataCollector
+
 
     def __init__(
         self,
@@ -250,7 +250,6 @@ class AgentsAndNetworks(mesa.Model):
         print("time: ",time)
         print("average locations: ",get_average_visited_locations(self))
         
-
 
     def __update_clock(self) -> None:
         self.second += self.step_duration

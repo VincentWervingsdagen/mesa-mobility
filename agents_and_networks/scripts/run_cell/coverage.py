@@ -2,13 +2,13 @@ import pickle
 import pandas as pd
 import numpy as np
 import re
-
 import csv
+
 from pyproj import Transformer
 from datetime import datetime, timedelta
-
+from telcell.data.models import Measurement, Point,RDPoint
 from random import choices
-from telcell.data.models import Measurement, Point, RDPoint
+from config import BOUNDING_BOX, BOUNDING_INCREASE, START_DATE, END_DATE, OUTPUT_TRAJECTORY_FILE, OUTPUT_CELL_FILE, CELL_FILE, COVERAGE_FILE
 
 import os
 
@@ -21,6 +21,9 @@ def main(model_params):
 
     # Retrieve start date
     start = datetime.strptime(model_params["start_date"],"%Y-%m-%d")
+
+    # Expand bounding box size
+    increase = BOUNDING_INCREASE
 
     # Setup output file
     output_file = open(model_params["output_file"], 'w')
@@ -42,15 +45,15 @@ def main(model_params):
     df_cell['lat'],df_cell['lon'] =  Transformer.from_crs("EPSG:28992","EPSG:4979").transform(df_cell['X'],df_cell['Y'])
  
     # Only keep cell towers in bounding box
-    df_cell = df_cell.loc[(df_cell['lon'] >= model_params["bounding_box"][0]) & (df_cell['lon'] <= model_params["bounding_box"][2]) 
-                          & (df_cell['lat'] >= model_params["bounding_box"][1]) & (df_cell['lat'] <= model_params["bounding_box"][3])]
+    df_cell = df_cell.loc[(df_cell['lon'] >= (model_params["bounding_box"][0]-increase)) & (df_cell['lon'] <= model_params["bounding_box"][2]+increase)
+                          & (df_cell['lat'] >= model_params["bounding_box"][1]-increase) & (df_cell['lat'] <= model_params["bounding_box"][3]+increase)]
 
     # drop rows that contain the partial string "Sci"
     
     df_cell = df_cell[~df_cell['Hoofdstraalrichting'].str.contains('|'.join(["-"]))]
     df_cell['Hoofdstraalrichting'] = df_cell['Hoofdstraalrichting'].str.replace('\D', '',regex=True)
     df_cell['Hoofdstraalrichting'] = df_cell['Hoofdstraalrichting'].str.replace(' ', '')
-    
+
     # Read in trajectories
     df_trajectory = pd.read_csv(model_params["trajectory_file"])
 
@@ -67,9 +70,9 @@ def main(model_params):
     agents = sorted(pd.unique(df_trajectory['owner']))  
     
     # Load in coverage model, we utilize the model with mnc 8 and 0 time difference
-    coverage_model_path = open(os.path.join(script_dir, '..','..', 'data', 'coverage_model'),'rb')
-    coverage_models = pickle.load(coverage_model_path)
-    model = coverage_models[('8',(0, 0))]
+    coverage_models = pickle.load(open(model_params["coverage_file"], 'rb'))
+
+    model = coverage_models[('16',(0, 0))]
 
     # Initialize variables 
     writing_id = 0
@@ -85,7 +88,7 @@ def main(model_params):
                         coords=Point(lat=float(all_cells[i][0]),
                                     lon=float(all_cells[i][1])),
                         timestamp=datetime.now(),
-                        extra={'mnc': '8',
+                        extra={'mnc': '16',
                             'azimuth': df_cell['Hoofdstraalrichting'].iloc[i],
                             'antenna_id': df_cell['ID'].iloc[i],
                             'postal_code': df_cell['POSTCODE'].iloc[i],
@@ -100,8 +103,7 @@ def main(model_params):
     for i in range(len(agents)):
         agents_df = df_trajectory[df_trajectory['owner'].isin([agents[i]])] 
         max = agents_df['seconds'].iloc[-1]
-        time_until_event = np.random.default_rng().geometric(p=1/(3600*model_params['event_rate']), size=int(max*model_params['event_rate']/(100))).tolist()
-        switch_towers = np.random.default_rng().uniform(0,1, size=int(max*model_params['event_rate']/(100))).tolist()
+
         print("Agents",i)
         
         # if we do independent sampling then we want to do full sampling twice for each phone
@@ -117,7 +119,7 @@ def main(model_params):
             home = (home_loc['cellinfo.wgs84.lat'].iloc[0],home_loc['cellinfo.wgs84.lon'].iloc[0])
             distances_home = np.linalg.norm(X-np.array((home[0],home[1])), axis=1)
 
-        time_until_event = np.random.default_rng().geometric(p=samples*1/(3600*model_params['event_rate']), size=int(samples*max*model_params['event_rate']/(100))).tolist()
+        time_until_event = np.random.default_rng().geometric(p=1/(3600*model_params['event_rate']), size=int(samples*max*model_params['event_rate']/(100))).tolist()
         switch_towers = np.random.default_rng().uniform(0,1, size=int(samples*max*model_params['event_rate']/(100))).tolist()
         print("Agents",i)
 
@@ -169,16 +171,16 @@ def main(model_params):
 
 if __name__ == '__main__':
     model_params = {
-        "start_date": '2023-05-01',
-        "end_date": '2023-06-01',
-        # "bounding_box":(4.2009,51.8561,4.9423,52.3926),
-        #"bounding_box":(4.3338,51.9853,4.3658,52.0204), #Delft
-        "bounding_box": (4.1874, 51.8280, 4.593, 52.0890), #Noord en zuid holland
-        "cell_file": os.path.join(script_dir, '..','..', 'data', '20191202131001.csv'),
-        "trajectory_file": os.path.join(script_dir, '..','..', 'outputs', 'trajectories','output_trajectory_30days.csv'),
-        "output_file": os.path.join(script_dir, '..','..', 'outputs', 'trajectories','output_cell.csv'),
+        "start_date": START_DATE,
+        "end_date": END_DATE,
+        "bounding_box":BOUNDING_BOX,
+        "cell_file": CELL_FILE,
+        "coverage_file": COVERAGE_FILE,
+        "trajectory_file": OUTPUT_TRAJECTORY_FILE,
+        "output_file": OUTPUT_CELL_FILE,
+        # 1 for independent sampling, 2 for dependent on time and 3 for dependent on location
         "sampling_method": 1,
-        "event_rate":1,  # number of events per hour
-        "probability_switch":0.1 # Probability of switching towers if the phone is stationary
+        "event_rate": 1,  # number of events per hour
+        "probability_switch": 0.1  # Probability of switching towers if the phone is stationary
     }
     main(model_params)
