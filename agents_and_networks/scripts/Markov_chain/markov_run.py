@@ -7,14 +7,14 @@ import os
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 #Options for running the program.
-norm = 'important_cut_distance' # options are either cut_distance,important_cut_distance,important_cut_distance_5, freq_distance, frobenius or trace norm.
-level = 'antenna' # options are either antenna, postal, postal3,postal2.
+norm = 'frobenius' # options are either cut_distance,important_cut_distance,important_cut_distance_5, freq_distance, frobenius or trace norm.
+level = 'postal2' # options are either antenna, postal, postal3,postal2.
 state_space = 'observations' # options are either Omega or observations.
 prior_type = 'uniform' # options are either zero, uniform, distance, population.
 
 MarkovChain(cell_file=os.path.join(script_dir, '..','..', 'data', '20191202131001.csv'),
             # observation_file=os.path.join(script_dir, '..', '..', 'outputs', 'trajectories', 'output_cell_30days_lessfreq.csv'),
-            observation_file = os.path.join(script_dir, '..','..', 'outputs','trajectories','Louise','output_cell_baseline.csv'),
+            observation_file = os.path.join(script_dir, '..','..', 'outputs','trajectories','Louise','output_cell_test1.csv'),
             distance_matrix_file = 'agents_and_networks/scripts/Markov_chain/LTE_dist2/{}.csv'.format(level),
             state_space=state_space,
             bounding_box=(4.1874, 51.8280, 4.593, 52.0890),

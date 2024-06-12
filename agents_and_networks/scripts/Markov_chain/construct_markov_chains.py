@@ -4,6 +4,7 @@ import pandas as pd
 import scipy.stats as stats
 from scipy.linalg import eig
 import geopy
+import convert_xy_to_postal as xypostal
 
 from pyproj import Transformer
 
@@ -16,7 +17,11 @@ def transform_data(observation_file, level) -> pd.DataFrame:
     #        'cellinfo.wgs84.lon', 'cellinfo.azimuth_degrees', 'cellinfo.id' and 'cellinfo.postal_code'
     # Will return a pandas dataframe with columns owner, device, timestamp and postal_code in the defined level format.
     df_observations = pd.read_csv(observation_file)
-    df_observations = df_observations[['owner','device','cellinfo.postal_code']]
+    if 'cellinfo.postal_code' in df_observations.columns:
+        df_observations = df_observations[['owner','device','cellinfo.postal_code']]
+    else:
+        df_observations = xypostal.add_postal_code(df_observations,observation_file)
+
     df_observations = df_observations.dropna()  # Drop nan values
     df_observations = df_observations.reset_index()  # Reset the index
     pattern = r'^\d{4}[A-Z]{2}$'  # Check whether every item is a valid postal code.
