@@ -49,6 +49,7 @@ class Commuter(mg.GeoAgent):
     def __init__(self, unique_id, model, geometry, crs) -> None:
         super().__init__(unique_id, model, geometry, crs)
         self.my_home = None
+        self.my_work = None
         self.visited_locations = []
         self.frequencies = []
         self._set_wait_time()
@@ -77,10 +78,14 @@ class Commuter(mg.GeoAgent):
 
     def set_home(self, new_home: Building) -> None:
         self.my_home = new_home
+        self.set_visited_location(new_home, 10)
+        self.set_next_location(new_home)
 
     def set_work(self, new_work: Building) -> None:
         self.my_work = new_work
-    
+        self.set_visited_location(new_work, 5)
+
+
     def set_next_location(self, next_location: Building) -> None:
         self.next_location = next_location
     
@@ -126,6 +131,8 @@ class Commuter(mg.GeoAgent):
                 self.speed = 0.
                 if self.destination == self.my_home:
                     self.status = "home"
+                elif self.destination == self.my_work:
+                    self.status = "work"
                 else:
                     self.status = "other"
 

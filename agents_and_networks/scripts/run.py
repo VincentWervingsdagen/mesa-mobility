@@ -17,12 +17,17 @@ if __name__ == "__main__":
         "bounding_box":BOUNDING_BOX,
         "num_commuters": mesa.visualization.NumberInput(
             "Number of agents",
-            value=10,
+            value=100,
         ),
         "walking_allowed": mesa.visualization.Choice(
             "Can paths or sidewalks be used?",
             value=False,
             choices=[False,True]
+        ),
+        "common_work": mesa.visualization.Choice(
+            "Do the agents work at the same place?",
+            value=True,
+            choices=[False, True]
         ),
         "step_duration": mesa.visualization.NumberInput(
             "Step duration (seconds)",

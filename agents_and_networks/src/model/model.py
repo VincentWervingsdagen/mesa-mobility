@@ -64,8 +64,10 @@ class AgentsAndNetworks(mesa.Model):
     positions_to_write: list[int,datetime.timestamp,float,float,str,float]
     positions: list[float,float]
     writing_id_trajectory:int
-    common_work: Building
+    common_work_building: Building
     datacollector: mesa.DataCollector
+    walking_allowed:bool
+    common_work:bool
 
 
     def __init__(
@@ -85,6 +87,7 @@ class AgentsAndNetworks(mesa.Model):
         gamma,
         bounding_box,
         walking_allowed: bool,
+        common_work: bool,
         model_crs="epsg:3857",
         start_date="2023-05-01",
     ) -> None:
@@ -98,6 +101,7 @@ class AgentsAndNetworks(mesa.Model):
         self.bounding_box = bounding_box
         self.step_duration = step_duration
         self.walking_allowed = walking_allowed
+        self.common_work=common_work
         self.positions_to_write = []
         self.positions = []
 
@@ -124,6 +128,7 @@ class AgentsAndNetworks(mesa.Model):
         self.writing_id_trajectory = 0
         self._create_commuters()
 
+
         script_dir = os.path.dirname(os.path.abspath(__file__))
         output_file_trajectory = open(os.path.join(script_dir, '..','..', 'outputs', 'trajectories', 'output_trajectory.csv'), 'w')
         csv.writer(output_file_trajectory).writerow(['id','owner','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','status','speed'])
@@ -146,7 +151,11 @@ class AgentsAndNetworks(mesa.Model):
         
     def _create_commuters(self) -> None:
         date = self.start_date
-        self.common_work = self.space.get_random_building()
+        if self.common_work:
+            self.common_work_building = self.space.get_random_building()
+            self.common_work_building.visited = True
+        else:
+            pass
         for i in range(self.num_commuters):
             random_home = self.space.get_random_building()
             commuter = Commuter(
@@ -156,11 +165,11 @@ class AgentsAndNetworks(mesa.Model):
                 crs=self.space.crs,
             )
             commuter.set_home(random_home)
-            commuter.set_next_location(commuter.my_home)
             random_home.visited = True
-            commuter.set_visited_location(random_home,25)
-            self.common_work.visited = True
-            commuter.set_visited_location(self.common_work, 20)
+            if self.common_work:
+                commuter.set_work(self.common_work_building)
+            else:
+                pass
             commuter.status = "home"
             commuter.speed = 0.
             self.space.add_commuter(commuter, True)
