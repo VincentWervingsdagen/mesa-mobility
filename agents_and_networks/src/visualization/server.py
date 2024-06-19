@@ -11,7 +11,7 @@ class ClockElement(mesa.visualization.TextElement):
         pass
 
     def render(self, model):
-        return f"Day {model.day}, {model.hour:02d}:{model.minute:02d}:{model.second:02d}"
+        return f"Day {model.time.day}, {model.time.hour:02d}:{model.time.minute:02d}:{model.time.second:02d}"
 
 
 def agent_draw(agent):
@@ -42,6 +42,7 @@ def agent_draw(agent):
 
 
 clock_element = ClockElement()
+
 status_chart = mesa.visualization.ChartModule(
     [
         {"Label": "status_traveling", "Color": "Red"},

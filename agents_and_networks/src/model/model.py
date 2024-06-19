@@ -22,7 +22,7 @@ from pyproj import Transformer
 
 
 def get_time(model) -> pd.Timedelta:
-    return pd.Timedelta(days=model.day, hours=model.hour, minutes=model.minute)
+    return pd.Timedelta(days=model.time.day, hours=model.time.hour, minutes=model.time.minute)
 
 
 def get_num_commuters_by_status(model, status: str) -> int:
@@ -41,8 +41,10 @@ def get_average_visited_locations(model) -> float:
 
 class AgentsAndNetworks(mesa.Model):
     schedule: mesa.time.RandomActivation
-    output_file: csv
-    start_date: str
+    output_file_trajectory: csv
+    output_file: str
+    end_date: datetime
+    time: datetime
     current_id: int
     space: Netherlands
     walkway: NetherlandsWalkway
@@ -57,10 +59,7 @@ class AgentsAndNetworks(mesa.Model):
     tau_time_min: float
     rho: float
     gamma: float
-    day: int
-    hour: int
-    minute: int
-    second: int
+    step_counter: int
     positions_to_write: list[int,datetime.timestamp,float,float,str,float]
     positions: list[float,float]
     writing_id_trajectory:int
@@ -75,6 +74,7 @@ class AgentsAndNetworks(mesa.Model):
         data_crs: str,
         buildings_file: str,
         walkway_file: str,
+        output_file: str,
         num_commuters,
         step_duration,
         alpha,
@@ -90,10 +90,12 @@ class AgentsAndNetworks(mesa.Model):
         common_work: bool,
         model_crs="epsg:3857",
         start_date="2023-05-01",
+        end_date="2023-06-01"
     ) -> None:
         super().__init__()
         self.schedule = mesa.time.RandomActivation(self)
-        self.start_date = datetime.strptime(start_date,"%Y-%m-%d")
+        self.time = datetime.strptime(start_date,"%Y-%m-%d")
+        self.end_date = datetime.strptime(end_date,"%Y-%m-%d")
         self.data_crs = data_crs
         self.space = Netherlands(crs=model_crs)
         self.num_commuters = num_commuters
@@ -104,6 +106,7 @@ class AgentsAndNetworks(mesa.Model):
         self.common_work=common_work
         self.positions_to_write = []
         self.positions = []
+        self.output_file = output_file
 
         Commuter.speed = 0. #Updates the current speed so that it can be saved.
         Commuter.ALPHA = alpha
@@ -121,17 +124,13 @@ class AgentsAndNetworks(mesa.Model):
         self._load_road_vertices_from_file(walkway_file, crs=model_crs)
 
         self._set_building_entrance()
-        self.day = 0
-        self.hour = 0
-        self.minute = 0
-        self.second = 0
         self.writing_id_trajectory = 0
+        self.step_counter = 0
         self._create_commuters()
 
-
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        output_file_trajectory = open(os.path.join(script_dir, '..','..', 'outputs', 'trajectories', 'output_trajectory.csv'), 'w')
-        csv.writer(output_file_trajectory).writerow(['id','owner','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','status','speed'])
+        self.output_file_trajectory = open(self.output_file, 'w')
+        csv.writer(self.output_file_trajectory).writerow(['id','owner','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','status','speed'])
+        self.output_file_trajectory.close()
 
         self.datacollector = mesa.DataCollector(
             model_reporters={
@@ -150,7 +149,6 @@ class AgentsAndNetworks(mesa.Model):
         
         
     def _create_commuters(self) -> None:
-        date = self.start_date
         if self.common_work:
             self.common_work_building = self.space.get_random_building()
             self.common_work_building.visited = True
@@ -175,7 +173,7 @@ class AgentsAndNetworks(mesa.Model):
             self.space.add_commuter(commuter, True)
             self.schedule.add(commuter)
             self.positions.append([commuter.geometry.x,commuter.geometry.y])
-            self.positions_to_write.append([i,date,commuter.geometry.x,commuter.geometry.y,commuter.status,commuter.speed])
+            self.positions_to_write.append([i,self.time,commuter.geometry.x,commuter.geometry.y,commuter.status,commuter.speed])
 
     def _load_buildings_from_file(
         self, buildings_file: str, crs: str
@@ -212,22 +210,17 @@ class AgentsAndNetworks(mesa.Model):
                                                       # so simulation will be slower.
         self.walkway = NetherlandsWalkway(lines=walkway_df[walkway_df['maxspeed']>0]["geometry"],maxspeed=walkway_df[walkway_df['maxspeed']>0]["maxspeed"])
 
-
     def _set_building_entrance(self) -> None:
         for building in (
             *self.space.buildings,
         ):
             building.entrance_pos = self.walkway.get_nearest_node(building.centroid)
 
-
-
     def step(self) -> None:
         self.__update_clock()
         self.schedule.step()
-
-        total_seconds = self.day*24*60*60 + self.hour*60*60 + self.minute*60 + self.second
-        time = self.start_date + timedelta(seconds = total_seconds)
-
+        self.step_counter += 1
+        time = self.time
         for i in range(self.num_commuters):
             commuter = self.schedule.agents[i]
             x = commuter.geometry.x
@@ -236,45 +229,28 @@ class AgentsAndNetworks(mesa.Model):
                 self.positions_to_write.append([i,time,x,y,commuter.status,commuter.speed])
                 self.positions[i][0] = x
                 self.positions[i][1] = y
-            if ((total_seconds // self.step_duration) % 60 == 0):
-                self.positions_to_write.append([i, time, x, y, commuter.status, commuter.speed])
-        if ((total_seconds//self.step_duration)%60 == 0):
+            if self.step_counter == 60:
+                self.positions_to_write.append([i,time, x, y, commuter.status, commuter.speed])
+
+        if self.step_counter == 60:
             self.__write_to_file()
             self.positions_to_write = []
-                
-    
+            self.step_counter = 0
+
     def __write_to_file(self) -> None:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        output_file = open(os.path.join(script_dir, '..','..', 'outputs', 'trajectories', 'output_trajectory.csv'), 'a')
-        output_writer = csv.writer(output_file)
+        self.output_file_trajectory = open(self.output_file, 'a')
+        output_writer = csv.writer(self.output_file_trajectory)
         for pos in self.positions_to_write:
             lon,lat = Transformer.from_crs("EPSG:3857","EPSG:4326").transform(pos[2],pos[3])
             output_writer.writerow([self.writing_id_trajectory, f"Agent{pos[0]}", 
                                    pos[1],
                                    lat,lon,pos[4],pos[5]])
             self.writing_id_trajectory += 1
-        output_file.close()
-        total_seconds = self.day*24*60*60 + self.hour*60*60 + self.minute*60 + self.second
-        time = self.start_date + timedelta(seconds = total_seconds)
-        print("time: ",time)
+        self.output_file_trajectory.close()
+        print("time: ",self.time)
         print("average locations: ",get_average_visited_locations(self))
-        
 
     def __update_clock(self) -> None:
-        self.second += self.step_duration
-        if self.second >= 60:
-            while self.second/60 >= 1:
-                self.minute += 1
-                self.second -= 60
-            if self.minute >= 60:
-                while self.minute/60 >= 1:
-                    self.hour += 1
-                    self.minute -= 60
-                if self.hour >= 24:
-                    self.day += 1
-                    self.hour = 0
-        
-                
-        
-               
-                    
+        self.time = self.time + timedelta(seconds = self.step_duration)
+        if self.time > self.end_date:
+            exit()

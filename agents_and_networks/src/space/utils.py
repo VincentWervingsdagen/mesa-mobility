@@ -83,7 +83,7 @@ def segmented(lines: gpd.GeoSeries) -> gpd.GeoSeries:
 #         )
 
 
-def redistribute_vertices_new(geom, traversal_times,maxspeed,time_step) -> tuple([list[mesa.space.FloatCoordinate],list[float]]):
+def redistribute_vertices_new(geom, traversal_times,maxspeed,time_step) -> [list[mesa.space.FloatCoordinate],list[float]]:
     traversal_times = traversal_times/time_step # Convert to fraction of timesteps for easier manipulation.
     cum_sum_traversal_times = np.append(0,np.cumsum(traversal_times))
     maxspeed = np.append(maxspeed[0],maxspeed)

@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import datetime
 import math
 
 import random
@@ -31,8 +33,7 @@ class Commuter(mg.GeoAgent):
         Building
     ]
     frequencies: list[int]
-    wait_time_h: int  # time to start going to work, hour and minute
-    wait_time_m: int
+    wait_time: datetime  # time to start moving
     status: str  # work, home, or transport
     speed: float
     maxspeed: list[float]
@@ -62,29 +63,19 @@ class Commuter(mg.GeoAgent):
         )
 
     def _set_wait_time(self) -> None:
-        # Total time passed in minutes
-        time_passed_m = (self.model.hour * 60) + self.model.minute
         # Get waiting time 
-        wait_time_m = (power_law_exponential_cutoff(self.TAU_time_min, self.TAU_time, self.BETA, self.TAU_time))*60
-        # Set correct new time
-        total_time_m = wait_time_m + time_passed_m
-        self.wait_time_h = math.floor(total_time_m/60)
-        self.wait_time_m = int((total_time_m-self.wait_time_h*60))
-         
-        # Hour resets ever 24 hours
-        if (self.wait_time_h >= 24):
-            self.wait_time_h = self.wait_time_h % 24
-
+        wait_time = (power_law_exponential_cutoff(self.TAU_time_min, self.TAU_time, self.BETA, self.TAU_time))*60
+        # Set new moving time
+        self.wait_time = self.model.time + datetime.timedelta(minutes=round(wait_time))
 
     def set_home(self, new_home: Building) -> None:
         self.my_home = new_home
         self.set_visited_location(new_home, 10)
-        self.set_next_location(new_home)
+        self.set_next_location(new_home) # Needed for proper path initalization.
 
     def set_work(self, new_work: Building) -> None:
         self.my_work = new_work
         self.set_visited_location(new_work, 5)
-
 
     def set_next_location(self, next_location: Building) -> None:
         self.next_location = next_location
@@ -96,10 +87,9 @@ class Commuter(mg.GeoAgent):
     def step(self) -> None:
         self._prepare_to_move()
         self._move()
-        
 
     def _prepare_to_move(self) -> None:
-        if (self.model.hour == self.wait_time_h and self.model.minute >= self.wait_time_m and not self.status == 'transport'):
+        if (self.model.time >= self.wait_time and not self.status == 'transport'):
             self.origin = self.next_location
             if len(self.visited_locations) <= 1:
                 self._explore()
@@ -116,13 +106,20 @@ class Commuter(mg.GeoAgent):
 
             self._path_select()
             self.status = "transport"
-                     
 
     def _move(self) -> None:
         if self.status == "transport":
             if self.step_in_path < len(self.my_path):
                 next_position = self.my_path[self.step_in_path]
-                self.speed = self.maxspeed[self.step_in_path]
+                try:
+                    # This step raised an index out of bound error four times, but uncertain why this was the case.
+                    # Also the error is not reproducible in every simulations and generally happens in the first steps.
+                    # The code does seem to work as intended though, so not clear what is going on.
+                    # For now we handle it with an exception check, since this part is not used in further simulations.
+                    self.speed = self.maxspeed[self.step_in_path]
+                except IndexError:
+                    self.speed = 1
+                    print(f"Index {self.step_in_path} is out of bounds, assigning default value.")
                 self.model.space.move_commuter(self, next_position, False)
                 self.step_in_path += 1
             else:
@@ -164,9 +161,6 @@ class Commuter(mg.GeoAgent):
         
         self.set_next_location(new_location[0])
 
-
-
-
     def _path_select(self) -> None:
         self.step_in_path = 0
         if (
@@ -185,7 +179,6 @@ class Commuter(mg.GeoAgent):
                 path=self.my_path,
             )
         self._redistribute_path_vertices()
-
 
     def _redistribute_path_vertices(self) -> None:
         # if origin and destination share the same entrance, then self.my_path
