@@ -1,6 +1,6 @@
 import mesa
 import mesa_geo as mg
-from config import BOUNDING_BOX, START_DATE, BUILDING_FILE, STREET_FILE, OUTPUT_TRAJECTORY_FILE
+from config import BOUNDING_BOX, START_DATE, END_DATE, BUILDING_FILE, STREET_FILE, OUTPUT_TRAJECTORY_FILE
 from src.model.model import AgentsAndNetworks
 from src.visualization.server import (
     agent_draw,
@@ -14,6 +14,7 @@ if __name__ == "__main__":
     model_params = {
         "data_crs": "epsg:4326",
         "start_date": START_DATE,
+        "end_date": END_DATE,
         "bounding_box":BOUNDING_BOX,
         "num_commuters": mesa.visualization.NumberInput(
             "Number of agents",
@@ -26,7 +27,7 @@ if __name__ == "__main__":
         ),
         "common_work": mesa.visualization.Choice(
             "Do the agents work at the same place?",
-            value=True,
+            value=False,
             choices=[False, True]
         ),
         "step_duration": mesa.visualization.NumberInput(
@@ -39,7 +40,7 @@ if __name__ == "__main__":
         ),
         "tau_jump_min": mesa.visualization.NumberInput(
             "Min travel distance (km)",
-            value=1.0,
+            value=5.0,
         ),
         "tau_jump": mesa.visualization.NumberInput(
             "Max travel distance (km)",
@@ -67,6 +68,7 @@ if __name__ == "__main__":
         ),
         "buildings_file": BUILDING_FILE,
         "walkway_file": STREET_FILE,
+        "output_file":OUTPUT_TRAJECTORY_FILE
     }
 
     map_element = mg.visualization.MapModule(agent_draw, map_height=600, map_width=600)
@@ -79,4 +81,3 @@ if __name__ == "__main__":
         model_params,
     )
     server.launch()
-
