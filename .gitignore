@@ -77,6 +77,7 @@ target/
 .dmypy.json
 dmypy.json
 
+
 # Virtual environment
 venv/
 
@@ -84,7 +85,10 @@ examples/caching_and_replay/my_cache_file_path.cache
 
 # data
 agents_and_networks/data
-agents_and_networks/outputs/trajectories/output.csv
+agents_and_networks/outputs/trajectories/Louise/
+agents_and_networks/outputs/trajectories/output_cell.csv
+agents_and_networks/outputs/trajectories/output_trajectory.csv
+agents_and_networks/outputs/path_cache_result.pkl
 agents_and_networks/scripts/timer.py
 agents_and_networks/scripts/exp.py
 *.csv
