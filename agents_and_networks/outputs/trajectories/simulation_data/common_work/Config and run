@@ -1,16 +1,17 @@
-# Config
+# Config file
 import os
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Bounding box for trajectory simulation
-BOUNDING_BOX = (4.2009,51.8561,4.9423,52.3926)
+BOUNDING_BOX = (4.2009,51.8561,4.9423,52.3926) # Used for simulations
+# BOUNDING_BOX = (4.3009,51.8561,4.4423,51.9926) # Small bounding box used for testing
 # Bounding box increase for connecting cell tower simulation
 BOUNDING_INCREASE = 0.01
 
 # Start and end date of simulation
 START_DATE = '2023-05-01'
-END_DATE = '2023-06-10'
+END_DATE = '2023-06-01'
 
 # Cell tower location file and pickled coverage model
 CELL_FILE = os.path.join(script_dir, 'data', '20191202131001.csv')
@@ -25,7 +26,9 @@ OUTPUT_CELL_FILE = os.path.join(script_dir,'outputs','trajectories','output_cell
 BUILDING_FILE = os.path.join(script_dir,'data','zuid-holland','gis_osm_buildings_a_free_1.zip')
 STREET_FILE = os.path.join(script_dir,'data','zuid-holland','gis_osm_roads_free_1.zip')
 
-# Run
+
+
+# Run file
 import mesa
 import mesa_geo as mg
 from config import BOUNDING_BOX, START_DATE, BUILDING_FILE, STREET_FILE, OUTPUT_TRAJECTORY_FILE
@@ -52,6 +55,11 @@ if __name__ == "__main__":
             value=False,
             choices=[False,True]
         ),
+        "common_work": mesa.visualization.Choice(
+            "Do the agents work at the same place?",
+            value=True,
+            choices=[False, True]
+        ),
         "step_duration": mesa.visualization.NumberInput(
             "Step duration (seconds)",
             value=60,
@@ -62,7 +70,7 @@ if __name__ == "__main__":
         ),
         "tau_jump_min": mesa.visualization.NumberInput(
             "Min travel distance (km)",
-            value=1.0,
+            value=5.0,
         ),
         "tau_jump": mesa.visualization.NumberInput(
             "Max travel distance (km)",
@@ -103,4 +111,18 @@ if __name__ == "__main__":
     )
     server.launch()
 
+    # Coverage file
+    model_params = {
+        "start_date": START_DATE,
+        "end_date": END_DATE,
+        "bounding_box": BOUNDING_BOX,
+        "cell_file": CELL_FILE,
+        "coverage_file": COVERAGE_FILE,
+        "trajectory_file": OUTPUT_TRAJECTORY_FILE,
+        "output_file": OUTPUT_CELL_FILE,
+        # 1 for independent sampling, 2 for dependent on time and 3 for dependent on location
+        "sampling_method": 1,
+        "event_rate": 1,  # number of events per hour
+        "probability_switch": 0.05  # Probability of switching towers if the phone is stationary
+    }
 

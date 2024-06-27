@@ -21,6 +21,15 @@ import random
 from pyproj import Transformer
 
 
+def ask_overwrite_permission(file_path):
+    if os.path.exists(file_path):
+        response = input(f"The file '{file_path}' already exists. Do you want to overwrite it? (y/n): ").strip().lower()
+        if response != 'y':
+            print("Operation aborted by the user.")
+            return False
+    return True
+
+
 def get_time(model) -> pd.Timedelta:
     return pd.Timedelta(days=model.time.day, hours=model.time.hour, minutes=model.time.minute)
 
@@ -128,9 +137,13 @@ class AgentsAndNetworks(mesa.Model):
         self.step_counter = 0
         self._create_commuters()
 
-        self.output_file_trajectory = open(self.output_file, 'w')
-        csv.writer(self.output_file_trajectory).writerow(['id','owner','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','status','speed'])
-        self.output_file_trajectory.close()
+        if ask_overwrite_permission(output_file):
+            self.output_file_trajectory = open(self.output_file, 'w')
+            csv.writer(self.output_file_trajectory).writerow(['id','owner','timestamp','cellinfo.wgs84.lon','cellinfo.wgs84.lat','status','speed'])
+            self.output_file_trajectory.close()
+        else:
+            print('File cannot be overwritten')
+            exit()
 
         self.datacollector = mesa.DataCollector(
             model_reporters={

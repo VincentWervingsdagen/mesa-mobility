@@ -148,17 +148,18 @@ def main(model_params):
     unique_locations = np.unique(rounded_locations, axis = 0)
 
     # Compute the probabilities of connecting to a cell tower for every rounded location in the dataset.
-    probabilities_list = []
+    index_cell_list = []
 
     for location in tqdm(unique_locations):
         rd = RDPoint(x=location[0]*100, y=location[1]*100)
-        probabilities = [grid.get_value_for_coord(rd) ** 2 for grid in all_grids]
-        probabilities_list.append(probabilities)
+        probabilities = [grid.get_value_for_coord(rd) for grid in all_grids]
+        favourite_cell_tower = choices(list(range(len(probabilities))), weights=probabilities)[0]
+        index_cell_list.append(favourite_cell_tower)
 
-    df_probabilities = pd.DataFrame({'rd.x':unique_locations[:,0],
+    df_favourite_cell_tower = pd.DataFrame({'rd.x':unique_locations[:,0],
                                      'rd.y':unique_locations[:,1],
-                                     'probabilities':probabilities_list})
-    df_probabilities.set_index(['rd.x','rd.y'],inplace=True)
+                                     'index_favourite_cell_tower':index_cell_list})
+    df_favourite_cell_tower.set_index(['rd.x','rd.y'],inplace=True)
 
     # loop over agents and obtain trajectory per agent, store max observed time
     for i in tqdm(range(len(agents))):
@@ -181,13 +182,10 @@ def main(model_params):
 
         # for each phone we sample from a poisson distribution with rate event_rate per hour
         for phone in range(samples):
-            x_old, y_old = 0, 0
             p_time = 1
             counter = 0
 
             time_until_event = np.random.default_rng().geometric(p=1 / (3600 * model_params['event_rate']), size=int(
-                samples * max * model_params['event_rate'] / (100))).tolist()
-            switch_towers = np.random.default_rng().uniform(0, 1, size=int(
                 samples * max * model_params['event_rate'] / (100))).tolist()
 
             time_until_event = np.array(time_until_event).cumsum()
@@ -200,13 +198,8 @@ def main(model_params):
                 x = agents_df['rd.x'].iloc[index]
                 y = agents_df['rd.y'].iloc[index]
 
-                if ((x_old != x or y_old != y)
-                        or (switch_towers.pop() < model_params["probability_switch"])):
-                    probabilities = df_probabilities.at[(x,y),'probabilities']
-                    index_cell = choices(list(range(len(probabilities))), weights=probabilities)[0]
-                    x_old = x
-                    y_old = y
-
+                index_cell = df_favourite_cell_tower.at[(x,y),'index_favourite_cell_tower']
+                print(index_cell)
                 if (model_params["sampling_method"] == 2):
                     day_time = p_time % 86400
                     if (day_time >= 32400 and day_time <= 61200):

@@ -1,0 +1,134 @@
+# Line 155 in coverage.py was changed
+# from: probabilities = [grid.get_value_for_coord(rd) ** 2 for grid in all_grids]
+# to: probabilities = [grid.get_value_for_coord(rd) for grid in all_grids]
+
+
+
+# Config file
+import os
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Bounding box for trajectory simulation
+BOUNDING_BOX = (4.2009,51.8561,4.9423,52.3926) # Used for simulations
+# BOUNDING_BOX = (4.3009,51.8561,4.4423,51.9926) # Small bounding box used for testing
+# Bounding box increase for connecting cell tower simulation
+BOUNDING_INCREASE = 0.01
+
+# Start and end date of simulation
+START_DATE = '2023-05-01'
+END_DATE = '2023-06-01'
+
+# Cell tower location file and pickled coverage model
+CELL_FILE = os.path.join(script_dir, 'data', '20191202131001.csv')
+COVERAGE_FILE = os.path.join(script_dir, 'data', 'coverage_model')
+
+# Locations for output trajectory and cell tower connections
+OUTPUT_TRAJECTORY_FILE = os.path.join(script_dir, 'outputs','trajectories','simulation_data','baseline','output_trajectory.csv')
+OUTPUT_CELL_FILE = os.path.join(script_dir,'outputs','trajectories','simulation_data','baseline','output_cell.csv')
+
+# Building file and street file
+# Download regions from following location https://download.geofabrik.de/europe/netherlands.html
+BUILDING_FILE = os.path.join(script_dir,'data','zuid-holland','gis_osm_buildings_a_free_1.zip')
+STREET_FILE = os.path.join(script_dir,'data','zuid-holland','gis_osm_roads_free_1.zip')
+
+
+
+# Run file
+import mesa
+import mesa_geo as mg
+from config import BOUNDING_BOX, START_DATE, BUILDING_FILE, STREET_FILE, OUTPUT_TRAJECTORY_FILE
+from src.model.model import AgentsAndNetworks
+from src.visualization.server import (
+    agent_draw,
+    clock_element,
+    status_chart,
+    location_chart,
+)
+
+
+if __name__ == "__main__":
+    model_params = {
+        "data_crs": "epsg:4326",
+        "start_date": START_DATE,
+        "bounding_box":BOUNDING_BOX,
+        "num_commuters": mesa.visualization.NumberInput(
+            "Number of agents",
+            value=100,
+        ),
+        "walking_allowed": mesa.visualization.Choice(
+            "Can paths or sidewalks be used?",
+            value=False,
+            choices=[False,True]
+        ),
+        "common_work": mesa.visualization.Choice(
+            "Do the agents work at the same place?",
+            value=False,
+            choices=[False, True]
+        ),
+        "step_duration": mesa.visualization.NumberInput(
+            "Step duration (seconds)",
+            value=60,
+        ),
+        "alpha": mesa.visualization.NumberInput(
+            "Exponent travel distance distribution (truncated power law)",
+            value=0.55,
+        ),
+        "tau_jump_min": mesa.visualization.NumberInput(
+            "Min travel distance (km)",
+            value=5.0,
+        ),
+        "tau_jump": mesa.visualization.NumberInput(
+            "Max travel distance (km)",
+            value=100.0,
+        ),
+        "beta": mesa.visualization.NumberInput(
+            "Exponent waiting time distribution (truncated power law)",
+            value=0.8,
+        ),
+        "tau_time_min": mesa.visualization.NumberInput(
+            "Min waiting time (hour)",
+            value=0.33,
+        ),
+        "tau_time": mesa.visualization.NumberInput(
+            "Max waiting time (hour)",
+            value=17,
+        ),
+        "rho": mesa.visualization.NumberInput(
+            "Constant in probability of exploration",
+            value=1,
+        ),
+        "gamma": mesa.visualization.NumberInput(
+            "Exponent in probability of exploration",
+            value=2,
+        ),
+        "buildings_file": BUILDING_FILE,
+        "walkway_file": STREET_FILE,
+    }
+
+    map_element = mg.visualization.MapModule(agent_draw, map_height=600, map_width=600)
+    server = mesa.visualization.ModularServer(
+        AgentsAndNetworks,
+        # use following if you want map functionality
+        [map_element, clock_element],
+        # [clock_element],
+        "Mesa Mobility extended with EPR",
+        model_params,
+    )
+    server.launch()
+
+    # Coverage file
+    model_params = {
+        "start_date": START_DATE,
+        "end_date": END_DATE,
+        "bounding_box": BOUNDING_BOX,
+        "cell_file": CELL_FILE,
+        "coverage_file": COVERAGE_FILE,
+        "trajectory_file": OUTPUT_TRAJECTORY_FILE,
+        "output_file": OUTPUT_CELL_FILE,
+        # 1 for independent sampling, 2 for dependent on time and 3 for dependent on location
+        "sampling_method": 1,
+        "event_rate": 1,  # number of events per hour
+        "probability_switch": 0.05  # Probability of switching towers if the phone is stationary
+    }
+
