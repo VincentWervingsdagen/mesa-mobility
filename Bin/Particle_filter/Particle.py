@@ -53,6 +53,7 @@ class Particle:
     def get_weight(self):
         return self.weight + np.finfo(float).eps # Add small weight so that we do not get divisions by 0
 
+
 class ParticleFilter:
     walkway: NetherlandsWalkway
     data_crs: str
@@ -66,7 +67,6 @@ class ParticleFilter:
     transformer: pyproj.Transformer
     list_estimated_location: list[(float,float)]
     list_paths: list[(float,float)]
-    return_all_paths: bool
 
     def __init__(self,
                  roadnetwork_file,
@@ -78,8 +78,7 @@ class ParticleFilter:
                  N,
                  data_crs="4326",
                  graph_crs="3857",
-                 method = 1,
-                 return_all_paths = False):
+                 method = 1):
         # Setting
         self.data_crs = data_crs
         self.graph_crs = graph_crs
@@ -92,7 +91,6 @@ class ParticleFilter:
         self.coverage_model(coverage_file_path)
         self.list_estimated_location = [(self.observations['cellinfo.wgs84.lon'].iloc[0],self.observations['cellinfo.wgs84.lat'].iloc[0])] # Initialise location on the first celltower.
         self.list_paths = [(self.observations['cellinfo.wgs84.lon'].iloc[0],self.observations['cellinfo.wgs84.lat'].iloc[0])] # Initiliase location on the first cell tower.
-        self.return_all_paths = return_all_paths
 
         #Particle filter
         self.initialise_particles()
