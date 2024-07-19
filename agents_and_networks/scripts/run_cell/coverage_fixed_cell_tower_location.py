@@ -244,6 +244,6 @@ if __name__ == '__main__':
         # 1 for independent sampling, 2 for dependent on time and 3 for dependent on location
         "sampling_method": 1,
         "event_rate": 1,  # number of events per hour
-        "probability_switch": 0.1  # Probability of switching towers if the phone is stationary
+        "probability_switch": 0.05  # Probability of switching towers if the phone is stationary
     }
     main(model_params)

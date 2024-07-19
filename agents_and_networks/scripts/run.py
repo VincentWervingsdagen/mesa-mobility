@@ -27,7 +27,7 @@ if __name__ == "__main__":
         ),
         "common_work": mesa.visualization.Choice(
             "Do the agents work at the same place?",
-            value=False,
+            value=True,
             choices=[False, True]
         ),
         "step_duration": mesa.visualization.NumberInput(
