@@ -27,7 +27,7 @@ if __name__ == "__main__":
         ),
         "common_work": mesa.visualization.Choice(
             "Do the agents work at the same place?",
-            value=True,
+            value=False,
             choices=[False, True]
         ),
         "step_duration": mesa.visualization.NumberInput(
@@ -40,7 +40,7 @@ if __name__ == "__main__":
         ),
         "tau_jump_min": mesa.visualization.NumberInput(
             "Min travel distance (km)",
-            value=5.0,
+            value=1,
         ),
         "tau_jump": mesa.visualization.NumberInput(
             "Max travel distance (km)",

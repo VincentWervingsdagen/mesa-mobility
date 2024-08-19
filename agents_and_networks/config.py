@@ -17,8 +17,8 @@ CELL_FILE = os.path.join(script_dir, 'data', '20191202131001.csv')
 COVERAGE_FILE = os.path.join(script_dir, 'data', 'coverage_model')
 
 # Locations for output trajectory and cell tower connections
-OUTPUT_TRAJECTORY_FILE = os.path.join(script_dir, 'outputs','trajectories','simulation_data','common_work','output_trajectory.csv')
-OUTPUT_CELL_FILE = os.path.join(script_dir,'outputs','trajectories','simulation_data','common_work','output_cell.csv')
+OUTPUT_TRAJECTORY_FILE = os.path.join(script_dir, 'outputs','trajectories','simulation_data','explorers','output_trajectory.csv')
+OUTPUT_CELL_FILE = os.path.join(script_dir,'outputs','trajectories','simulation_data','explorers','output_cell.csv')
 
 # Building file and street file
 # Download regions from following location https://download.geofabrik.de/europe/netherlands.html

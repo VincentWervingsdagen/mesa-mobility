@@ -1,3 +1,5 @@
+# Coverage_favourite_cell_tower.py was used instead of coverage.py
+
 # Config file
 import os
 
@@ -18,13 +20,14 @@ CELL_FILE = os.path.join(script_dir, 'data', '20191202131001.csv')
 COVERAGE_FILE = os.path.join(script_dir, 'data', 'coverage_model')
 
 # Locations for output trajectory and cell tower connections
-OUTPUT_TRAJECTORY_FILE = os.path.join(script_dir, 'outputs','trajectories','simulation_data','common_work','output_trajectory.csv')
-OUTPUT_CELL_FILE = os.path.join(script_dir,'outputs','trajectories','simulation_data','common_work','output_cell.csv')
+OUTPUT_TRAJECTORY_FILE = os.path.join(script_dir, 'outputs','trajectories','simulation_data','baseline','output_trajectory.csv')
+OUTPUT_CELL_FILE = os.path.join(script_dir,'outputs','trajectories','simulation_data','baseline','output_cell.csv')
 
 # Building file and street file
 # Download regions from following location https://download.geofabrik.de/europe/netherlands.html
 BUILDING_FILE = os.path.join(script_dir,'data','zuid-holland','gis_osm_buildings_a_free_1.zip')
 STREET_FILE = os.path.join(script_dir,'data','zuid-holland','gis_osm_roads_free_1.zip')
+
 
 
 # Run file
@@ -56,7 +59,7 @@ if __name__ == "__main__":
         ),
         "common_work": mesa.visualization.Choice(
             "Do the agents work at the same place?",
-            value=True,
+            value=False,
             choices=[False, True]
         ),
         "step_duration": mesa.visualization.NumberInput(
@@ -110,7 +113,7 @@ if __name__ == "__main__":
     )
     server.launch()
 
-    # Coverage file fixed_cell_tower_location.py
+    # Coverage file
     model_params = {
         "start_date": START_DATE,
         "end_date": END_DATE,
