@@ -9,6 +9,7 @@ import mesa
 import mesa_geo as mg
 import numpy as np
 import pyproj
+from scipy.stats import pareto
 import shapely
 from shapely.geometry import LineString, Point
 from src.agent.building import Building
@@ -64,7 +65,7 @@ class Commuter(mg.GeoAgent):
 
     def _set_wait_time(self) -> None:
         # Get waiting time 
-        wait_time = (power_law_exponential_cutoff(self.TAU_time_min, self.TAU_time, self.BETA, self.TAU_time))*60
+        wait_time = max(self.TAU_time_min,min(self.TAU_time,pareto.rvs(self.BETA)))*60
         # Set new moving time
         self.wait_time = self.model.time + datetime.timedelta(minutes=round(wait_time))
 
@@ -136,8 +137,7 @@ class Commuter(mg.GeoAgent):
     def _explore(self) -> None:
         visited_locations = self.visited_locations
         frequencies = self.frequencies
-
-        jump_length = (power_law_exponential_cutoff(self.TAU_jump_min, self.TAU_jump, self.ALPHA, self.TAU_jump)*1000)
+        jump_length = max(self.TAU_jump_min,min(self.TAU_jump,pareto.rvs(self.ALPHA)))*1000
         theta = random.uniform(0, 2*math.pi)
         new_point = Point(self.geometry.x + jump_length * math.cos(theta),
         self.geometry.y + jump_length * math.sin(theta))      
