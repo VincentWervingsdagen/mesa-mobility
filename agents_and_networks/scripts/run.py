@@ -18,7 +18,7 @@ if __name__ == "__main__":
         "bounding_box":BOUNDING_BOX,
         "num_commuters": mesa.visualization.NumberInput(
             "Number of agents",
-            value=100,
+            value=5,
         ),
         "walking_allowed": mesa.visualization.Choice(
             "Can paths or sidewalks be used?",
@@ -40,7 +40,7 @@ if __name__ == "__main__":
         ),
         "tau_jump_min": mesa.visualization.NumberInput(
             "Min travel distance (km)",
-            value=1,
+            value=1.,
         ),
         "tau_jump": mesa.visualization.NumberInput(
             "Max travel distance (km)",
@@ -52,11 +52,11 @@ if __name__ == "__main__":
         ),
         "tau_time_min": mesa.visualization.NumberInput(
             "Min waiting time (hour)",
-            value=0.33,
+            value=0.2,
         ),
         "tau_time": mesa.visualization.NumberInput(
             "Max waiting time (hour)",
-            value=17,
+            value=17.,
         ),
         "rho": mesa.visualization.NumberInput(
             "Constant in probability of exploration",
