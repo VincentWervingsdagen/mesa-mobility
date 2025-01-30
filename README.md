@@ -1,4 +1,4 @@
-Agents and Networks Model
+Trajectory and Connecting Cell Model
 =========================
 
 ![Delft Example](agents_and_networks/outputs/figures/epr_example.png)
@@ -6,22 +6,22 @@ Agents and Networks Model
 
 
 ## Summary
+In this repository, we include the tool and datasets used in publication ... The datasets used in our analysis, including the baseline and three behavior variations, can be found in resources. The tool used can be found in the agents_and_networks folder. This implementation is based on the [GMU-Social Model](https://github.com/abmgis/abmgis/blob/master/Chapter08-Networks/Models/GMU-Social/README.md) in Python, using [Mesa](https://github.com/projectmesa/mesa) and [Mesa-Geo](https://github.com/projectmesa/mesa-geo). It is built upon the agents and networks example [Agent and Networks](https://github.com/projectmesa/mesa-examples/tree/main/gis/agents_and_networks). 
 
-This is an implementation is based on the [GMU-Social Model](https://github.com/abmgis/abmgis/blob/master/Chapter08-Networks/Models/GMU-Social/README.md) in Python, using [Mesa](https://github.com/projectmesa/mesa) and [Mesa-Geo](https://github.com/projectmesa/mesa-geo).
+### Trajectory
+In this model, we generate mobility trajectories using EPR. All parameters can be chosen through the user interface and correspond to the truncated power law distributions modeling jump length and waiting time in the CTRW. The exploration and preferential return probabilities can also be specified. Agents' commute routes can be found as the shortest path between entrances of their home and desired destination. These commute routes are segmented according to agents' walking speed. In this way, the movements of agents are constrained on the road network.
 
-In this model, EPR is run. All parameters can be chosen through the user interface and correspond to the truncated power law distributions modelling jump length and  waiting time in the CTRW. The exploration and preferential return probabilies can also be specified. Agents' commute routes can be found as the shortest path between entrances of their home and desired destination. These commute routes are segmented according to agents' walking speed. In this way, the movements of agents are constrained on the road network.
 
-### GeoSpace
+### Connecting antennas
+We include a model to generate datasets for connecting antennas for two phones per agent trajectory. Two options are implemented, one based on the closest antenna facing the agent (the simple model) and one using a coverage model of an antenna's service area (the coverage model). We assume independent phone usage between phones carried by the same agent, and model inter-arrival times as exponentially distributed with the rate of one per hour. We also allow for a dependency sampling option based on either time or location.
 
-The GeoSpace contains multiple vector layers, including buildings, and a road network. More specifically, the road network is constructed from the polyline data and implemented by two underlying data structures: a topological network and a k-d tree. First, by treating road vertices as nodes and line segments as links, a topological network is created using the NetworkX and momepy libraries. NetworkX also provides several methods for shortest path computations (e.g., Dijkstra, A-star). Second, a k-d tree is built for all road vertices through the Scikit-learn library for the purpose of nearest vertex searches.
 
-### GeoAgent
-
-The commuters are the GeoAgents.
+## How to set file locations
+Update config.py to include the correct file locations.
+Street and building locations (in the netherlands) can be downloaded from https://download.geofabrik.de/europe/netherlands.html. 
 
 ## How to run
-
-First install the dependencies:
+From the agents_and_networks folder, first install the dependencies:
 
 ```bash
 python3 -m pip install -r requirements.txt
@@ -33,7 +33,9 @@ Then run the trajectory model:
 python3 scripts/run.py 
 ```
 
-Then run the cell-tower sampling model (make sure you adjust the input parameters for desired sampling):
+Then run the cell-tower sampling model:
+
+
 With coverage model:
 ```bash
 python3 scripts/run_cell/coverage.py 
@@ -44,9 +46,8 @@ With simple sampling (closest cell tower facing agent):
 python3 scripts/run_cell/simple.py 
 ```
 
-Change `zuid-holland` to ... for a different region.
-
 Open your browser to [http://127.0.0.1:8521/](http://127.0.0.1:8521/) and press `Start`.
+
 
 ## License
 
